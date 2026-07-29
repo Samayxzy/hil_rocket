@@ -1,0 +1,1128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>MONK HIL — Flight</title>
+<style>
+:root {
+  --bg:       #090c10;
+  --bg-p:     #0d1117;
+  --bg-c:     #111820;
+  --border:   #1e2d3d;
+  --border-h: #2a3f55;
+  --teal:     #22d3ee;
+  --teal-d:   #0e7490;
+  --orange:   #f97316;
+  --green:    #22c55e;
+  --red:      #ef4444;
+  --yellow:   #eab308;
+  --text:     #e2e8f0;
+  --dim:      #64748b;
+  --mid:      #94a3b8;
+  --mono:     'JetBrains Mono','Fira Code','Courier New',monospace;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow:hidden}
+body{background:var(--bg);color:var(--text);font-family:var(--mono);font-size:12px;display:flex;flex-direction:column}
+
+/* ── Header ── */
+#hdr{display:flex;align-items:center;gap:10px;padding:0 12px;height:44px;background:var(--bg-p);border-bottom:1px solid var(--border);flex-shrink:0;z-index:10}
+.logo{font-size:14px;font-weight:700;letter-spacing:.15em;color:var(--teal);margin-right:4px}
+.logo span{color:var(--dim);font-weight:400}
+#clock{font-size:20px;font-weight:700;letter-spacing:.05em;color:var(--text);min-width:110px}
+.pill{font-size:9px;padding:2px 7px;border-radius:3px;letter-spacing:.1em;border:1px solid var(--border);color:var(--dim)}
+.pill.on{background:rgba(34,211,238,.12);border-color:var(--teal-d);color:var(--teal)}
+.pill.warn{background:rgba(249,115,22,.12);border-color:var(--orange);color:var(--orange)}
+.pill.ok{background:rgba(34,197,94,.12);border-color:var(--green);color:var(--green)}
+.pill.red{background:rgba(239,68,68,.12);border-color:var(--red);color:var(--red)}
+#hdr-metrics{display:flex;gap:16px;margin-left:auto;align-items:baseline}
+.hm{display:flex;flex-direction:column;align-items:flex-end}
+.hm .hk{font-size:8px;color:var(--dim);letter-spacing:.1em}
+.hm .hv{font-size:13px;color:var(--teal)}
+#btn-wt{margin-left:8px;background:var(--bg-c);border:1px solid var(--border);color:var(--mid);font-family:var(--mono);font-size:10px;padding:4px 10px;border-radius:4px;cursor:pointer;letter-spacing:.08em}
+#btn-wt:hover{border-color:var(--border-h);color:var(--text)}
+
+/* ── Scrubber ── */
+#scrubber-bar{display:flex;align-items:center;gap:8px;padding:0 12px;height:32px;background:var(--bg-p);border-bottom:1px solid var(--border);flex-shrink:0}
+#btn-live{background:rgba(34,211,238,.12);border:1px solid var(--teal-d);color:var(--teal);font-family:var(--mono);font-size:9px;padding:2px 8px;border-radius:3px;cursor:pointer;letter-spacing:.1em}
+#btn-live.dead{background:var(--bg-c);border-color:var(--border);color:var(--dim)}
+#scrub{flex:1;height:3px;accent-color:var(--teal);cursor:pointer}
+#scrub-time{font-size:10px;color:var(--dim);min-width:70px;text-align:right}
+#pill-paused{display:none}
+
+/* ── Main area ── */
+#main{display:flex;flex:1;overflow:hidden}
+
+/* ── 3D Viewer ── */
+#viewer{position:relative;width:44%;flex-shrink:0;border-right:1px solid var(--border);background:var(--bg)}
+#viewer canvas{width:100%;height:100%;display:block}
+.v-badge{position:absolute;font-size:9px;padding:2px 7px;border-radius:3px;letter-spacing:.1em;pointer-events:none}
+#badge-phase{top:10px;left:10px;background:rgba(9,12,16,.85);border:1px solid var(--border-h);color:var(--teal)}
+#badge-motor{top:10px;right:10px;background:rgba(9,12,16,.85);border:1px solid var(--border);color:var(--dim)}
+#trail-legend{position:absolute;bottom:10px;right:10px;background:rgba(9,12,16,.85);border:1px solid var(--border);border-radius:4px;padding:6px 10px;font-size:9px;color:var(--dim)}
+#trail-legend .tl-row{display:flex;align-items:center;gap:5px;margin-bottom:2px}
+#trail-legend .tl-line{width:16px;height:2px}
+
+/* ── Data panels ── */
+#panels{flex:1;display:grid;grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr;overflow:hidden}
+.panel{border-right:1px solid var(--border);border-bottom:1px solid var(--border);overflow-y:auto;padding:8px}
+.panel:nth-child(2n){border-right:none}
+.panel-title{font-size:9px;letter-spacing:.12em;color:var(--dim);margin-bottom:8px;padding-bottom:5px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:6px}
+.panel-title .pt-accent{color:var(--teal)}
+
+/* Data rows */
+.d-section{margin-bottom:8px}
+.d-label{font-size:8px;color:var(--dim);letter-spacing:.1em;margin-bottom:4px}
+.d-row{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:2px}
+.d-row .dk{font-size:10px;color:var(--mid)}
+.d-row .dv{font-size:11px;color:var(--teal);font-weight:500}
+.d-row .dv.warn{color:var(--orange)}
+.d-row .dv.ok{color:var(--green)}
+.d-row .dv.red{color:var(--red)}
+
+/* ADI */
+#adi-wrap{display:flex;justify-content:center;margin-bottom:8px}
+#adi{border-radius:50%;border:1px solid var(--border-h)}
+
+/* Euler cells */
+.euler-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:4px;margin-bottom:8px}
+.euler-cell{background:var(--bg-c);border:1px solid var(--border);border-radius:4px;padding:5px;text-align:center}
+.euler-cell .ek{font-size:8px;color:var(--dim);letter-spacing:.08em}
+.euler-cell .ev{font-size:14px;color:var(--teal)}
+
+/* Servo gauges */
+.servo-pair{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:6px}
+.servo-gauge{background:var(--bg-c);border:1px solid var(--border);border-radius:4px;padding:6px}
+.servo-gauge .sg-label{font-size:8px;color:var(--dim);letter-spacing:.08em;margin-bottom:4px}
+.servo-track{height:6px;background:var(--border);border-radius:3px;position:relative;margin-bottom:3px}
+.servo-needle{position:absolute;top:-1px;width:3px;height:8px;background:var(--teal);border-radius:2px;transform:translateX(-50%);transition:left .1s}
+.servo-needle.warn{background:var(--orange)}
+.servo-val{font-size:11px;color:var(--teal);text-align:center}
+
+/* Link quality bar */
+.link-bar{height:4px;background:var(--border);border-radius:2px;margin-top:4px}
+.link-fill{height:100%;border-radius:2px;background:var(--green);transition:width .3s}
+
+/* HW offline message */
+#hw-offline-msg{display:flex;flex-direction:column;align-items:center;justify-content:center;height:80%;color:var(--dim);text-align:center;gap:6px}
+#hw-offline-msg .off-icon{font-size:28px;opacity:.3}
+#hw-offline-msg .off-title{font-size:11px;color:var(--mid);letter-spacing:.1em}
+#hw-offline-msg .off-sub{font-size:9px;line-height:1.6}
+
+/* ── Charts ── */
+#charts{height:185px;flex-shrink:0;border-top:1px solid var(--border);display:flex;background:var(--bg-p)}
+.chart-wrap{flex:1;border-right:1px solid var(--border);position:relative;overflow:hidden}
+.chart-wrap:last-child{border-right:none}
+.chart-label{position:absolute;top:4px;left:6px;font-size:8px;color:var(--dim);letter-spacing:.08em;z-index:1;display:flex;align-items:center;gap:5px}
+.chart-label .cl-val{color:var(--teal);font-size:10px}
+.chart-ymax{position:absolute;top:16px;right:4px;font-size:8px;color:var(--dim)}
+.chart-ymin{position:absolute;bottom:16px;right:4px;font-size:8px;color:var(--dim)}
+.chart-apogee{position:absolute;top:0;bottom:0;width:1px;background:rgba(234,179,8,.5);pointer-events:none;display:none}
+canvas.chart-canvas{width:100%;height:100%;display:block}
+
+/* ── Flight summary popup ── */
+#summary-overlay{display:none;position:fixed;inset:0;background:rgba(9,12,16,.85);z-index:100;align-items:center;justify-content:center}
+#summary-overlay.show{display:flex}
+#summary-box{background:var(--bg-p);border:1px solid var(--border-h);border-radius:8px;padding:24px;min-width:340px}
+#summary-box h2{font-size:13px;letter-spacing:.15em;color:var(--teal);margin-bottom:16px;text-align:center}
+.sum-row{display:flex;justify-content:space-between;margin-bottom:8px;font-size:11px}
+.sum-row .sk{color:var(--mid)}
+.sum-row .sv{color:var(--teal)}
+#sum-close{margin-top:16px;width:100%;padding:8px;background:var(--bg-c);border:1px solid var(--border);color:var(--text);font-family:var(--mono);font-size:11px;border-radius:4px;cursor:pointer;letter-spacing:.1em}
+#sum-close:hover{border-color:var(--border-h)}
+
+::-webkit-scrollbar{width:3px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+</style>
+</head>
+<body>
+
+<!-- Header -->
+<div id="hdr">
+  <div class="logo">MONK <span>·</span> HIL</div>
+  <div id="clock">T+00:00.0</div>
+  <div id="pill-sim" class="pill on">SIM ACTIVE</div>
+  <div id="pill-hw"  class="pill">HW OFFLINE</div>
+  <div id="pill-phase" class="pill">IDLE</div>
+  <div id="pill-paused" class="pill warn">PAUSED</div>
+  <div id="hdr-metrics">
+    <div class="hm"><span class="hk">ALT m</span><span class="hv" id="hm-alt">0.0</span></div>
+    <div class="hm"><span class="hk">Vz m/s</span><span class="hv" id="hm-vz">0.0</span></div>
+    <div class="hm"><span class="hk">SPD m/s</span><span class="hv" id="hm-spd">0.0</span></div>
+    <div class="hm"><span class="hk">MACH</span><span class="hv" id="hm-mach">0.000</span></div>
+    <div class="hm"><span class="hk">G-LOAD</span><span class="hv" id="hm-g">1.00</span></div>
+    <div class="hm"><span class="hk">Hz</span><span class="hv" id="hm-hz">0</span></div>
+  </div>
+  <button id="btn-wt" onclick="window.open('/windtunnel','wt','width=680,height=960')">⬡ WIND TUNNEL</button>
+</div>
+
+<!-- Scrubber -->
+<div id="scrubber-bar">
+  <button id="btn-live" class="dead" onclick="goLive()">● LIVE</button>
+  <input type="range" id="scrub" min="0" max="1000" value="1000" step="1">
+  <span id="scrub-time">T+00:00.0</span>
+  <div id="pill-paused" class="pill warn" style="display:none">PAUSED</div>
+</div>
+
+<!-- Main area -->
+<div id="main">
+
+  <!-- 3D Viewer -->
+  <div id="viewer">
+    <canvas id="three-canvas"></canvas>
+    <div class="v-badge" id="badge-phase">IDLE</div>
+    <div class="v-badge" id="badge-motor">—</div>
+    <div id="trail-legend">
+      <div class="tl-row"><div class="tl-line" style="background:var(--teal)"></div>SIM</div>
+      <div class="tl-row"><div class="tl-line" style="background:var(--orange)"></div>HW</div>
+    </div>
+  </div>
+
+  <!-- Data panels 2x2 -->
+  <div id="panels">
+
+    <!-- Panel 1: SIM TRUTH — ATTITUDE -->
+    <div class="panel">
+      <div class="panel-title"><span class="pt-accent">◈</span> SIM TRUTH · ATTITUDE</div>
+      <div id="adi-wrap"><canvas id="adi" width="100" height="100"></canvas></div>
+      <div class="euler-row">
+        <div class="euler-cell"><div class="ek">PITCH</div><div class="ev" id="e-pitch">0.0°</div></div>
+        <div class="euler-cell"><div class="ek">ROLL</div><div class="ev" id="e-roll">0.0°</div></div>
+        <div class="euler-cell"><div class="ek">YAW</div><div class="ev" id="e-yaw">0.0°</div></div>
+      </div>
+      <div class="d-section">
+        <div class="d-label">ANGULAR RATE · rad/s</div>
+        <div class="d-row"><span class="dk">ωx (pitch)</span><span class="dv" id="ar-x">0.0000</span></div>
+        <div class="d-row"><span class="dk">ωy (roll)</span><span class="dv" id="ar-y">0.0000</span></div>
+        <div class="d-row"><span class="dk">ωz (yaw)</span><span class="dv" id="ar-z">0.0000</span></div>
+      </div>
+      <div class="d-section">
+        <div class="d-label">MOTOR STATE</div>
+        <div class="d-row"><span class="dk">Thrust</span><span class="dv" id="ms-thrust">0.0 N</span></div>
+        <div class="d-row"><span class="dk">Burn remaining</span><span class="dv" id="ms-burn">—</span></div>
+        <div class="d-row"><span class="dk">Phase</span><span class="dv" id="ms-phase">IDLE</span></div>
+      </div>
+    </div>
+
+    <!-- Panel 2: SIM TRUTH — DYNAMICS -->
+    <div class="panel">
+      <div class="panel-title"><span class="pt-accent">◈</span> SIM TRUTH · DYNAMICS</div>
+      <div class="d-section">
+        <div class="d-label">POSITION · m (XYZ)</div>
+        <div class="d-row"><span class="dk">X (east)</span><span class="dv" id="p-x">0.00</span></div>
+        <div class="d-row"><span class="dk">Y (north)</span><span class="dv" id="p-y">0.00</span></div>
+        <div class="d-row"><span class="dk">Z (up)</span><span class="dv" id="p-z">0.00</span></div>
+      </div>
+      <div class="d-section">
+        <div class="d-label">VELOCITY · m/s</div>
+        <div class="d-row"><span class="dk">Vx</span><span class="dv" id="v-x">0.00</span></div>
+        <div class="d-row"><span class="dk">Vy</span><span class="dv" id="v-y">0.00</span></div>
+        <div class="d-row"><span class="dk">Vz</span><span class="dv" id="v-z">0.00</span></div>
+        <div class="d-row"><span class="dk">|V| speed</span><span class="dv" id="v-spd">0.00</span></div>
+      </div>
+      <div class="d-section">
+        <div class="d-label">TRUE ACCELERATION · m/s²</div>
+        <div class="d-row"><span class="dk">Ax</span><span class="dv" id="a-x">0.000</span></div>
+        <div class="d-row"><span class="dk">Ay</span><span class="dv" id="a-y">0.000</span></div>
+        <div class="d-row"><span class="dk">Az</span><span class="dv" id="a-z">9.807</span></div>
+      </div>
+      <div class="d-section">
+        <div class="d-label">AERODYNAMICS</div>
+        <div class="d-row"><span class="dk">Dynamic pressure</span><span class="dv" id="aero-q">0.0 Pa</span></div>
+        <div class="d-row"><span class="dk">Drag force</span><span class="dv" id="aero-drag">0.0 N</span></div>
+        <div class="d-row"><span class="dk">Mach</span><span class="dv" id="aero-mach">0.000</span></div>
+        <div class="d-row"><span class="dk">G-load</span><span class="dv" id="aero-g">1.00</span></div>
+        <div class="d-row"><span class="dk">AoA</span><span class="dv" id="aero-aoa">0.0°</span></div>
+      </div>
+    </div>
+
+    <!-- Panel 3: SENSOR DATA -->
+    <div class="panel">
+      <div class="panel-title"><span class="pt-accent">◈</span> SENSOR DATA · IMU / BARO</div>
+      <div class="d-section">
+        <div class="d-label">SYNTHETIC IMU · SENT TO HW</div>
+        <div class="d-row"><span class="dk">Ax (w/ noise)</span><span class="dv" id="imu-ax">0.000</span></div>
+        <div class="d-row"><span class="dk">Ay (w/ noise)</span><span class="dv" id="imu-ay">0.000</span></div>
+        <div class="d-row"><span class="dk">Az (w/ noise)</span><span class="dv" id="imu-az">9.829</span></div>
+        <div class="d-row"><span class="dk">Gx (w/ noise)</span><span class="dv" id="imu-gx">0.0000</span></div>
+        <div class="d-row"><span class="dk">Gy (w/ noise)</span><span class="dv" id="imu-gy">0.0000</span></div>
+        <div class="d-row"><span class="dk">Gz (w/ noise)</span><span class="dv" id="imu-gz">0.0000</span></div>
+      </div>
+      <div class="d-section">
+        <div class="d-label">BAROMETER · SYNTHETIC</div>
+        <div class="d-row"><span class="dk">Baro altitude</span><span class="dv" id="baro-est">0.0 m</span></div>
+        <div class="d-row"><span class="dk">True altitude</span><span class="dv" id="baro-true">0.0 m</span></div>
+        <div class="d-row"><span class="dk">Δ Baro error</span><span class="dv" id="baro-err">+0.00 m</span></div>
+      </div>
+      <div class="d-section">
+        <div class="d-label">UART OUTGOING</div>
+        <div class="d-row"><span class="dk">Packets sent</span><span class="dv" id="uart-sent">0</span></div>
+        <div class="d-row"><span class="dk">Packet rate</span><span class="dv" id="uart-rate">0 Hz</span></div>
+        <div class="d-row"><span class="dk">Last packet</span><span class="dv" id="uart-last" style="font-size:9px;max-width:120px;overflow:hidden;text-overflow:ellipsis">—</span></div>
+      </div>
+    </div>
+
+    <!-- Panel 4: HW TELEMETRY -->
+    <div class="panel">
+      <div class="panel-title"><span class="pt-accent">◈</span> HW TELEMETRY · MONK</div>
+      <div id="hw-offline-msg">
+        <div class="off-icon">⬡</div>
+        <div class="off-title">FLIGHT COMPUTER OFFLINE</div>
+        <div class="off-sub">Connect the MONK board via<br>UART to view hardware<br>telemetry</div>
+      </div>
+      <div id="hw-online-content" style="display:none">
+        <div class="d-section">
+          <div class="d-label">RAW IMU · FROM HW</div>
+          <div class="d-row"><span class="dk">Ax</span><span class="dv" id="hw-ax">0.000</span></div>
+          <div class="d-row"><span class="dk">Ay</span><span class="dv" id="hw-ay">0.000</span></div>
+          <div class="d-row"><span class="dk">Az</span><span class="dv" id="hw-az">0.000</span></div>
+          <div class="d-row"><span class="dk">Gx</span><span class="dv" id="hw-gx">0.000</span></div>
+          <div class="d-row"><span class="dk">Gy</span><span class="dv" id="hw-gy">0.000</span></div>
+          <div class="d-row"><span class="dk">Gz</span><span class="dv" id="hw-gz">0.000</span></div>
+        </div>
+        <div class="d-section">
+          <div class="d-label">ONBOARD ATTITUDE</div>
+          <div class="d-row"><span class="dk">Pitch</span><span class="dv" id="hw-pitch">0.0°</span></div>
+          <div class="d-row"><span class="dk">Roll</span><span class="dv" id="hw-roll">0.0°</span></div>
+          <div class="d-row"><span class="dk">Yaw</span><span class="dv" id="hw-yaw">0.0°</span></div>
+        </div>
+        <div class="d-section">
+          <div class="d-label">TVC SERVOS</div>
+          <div class="servo-pair">
+            <div class="servo-gauge">
+              <div class="sg-label">PITCH</div>
+              <div class="servo-track"><div class="servo-needle" id="sv-pitch-needle" style="left:50%"></div></div>
+              <div class="servo-val" id="sv-pitch-val">0.0°</div>
+            </div>
+            <div class="servo-gauge">
+              <div class="sg-label">YAW</div>
+              <div class="servo-track"><div class="servo-needle" id="sv-yaw-needle" style="left:50%"></div></div>
+              <div class="servo-val" id="sv-yaw-val">0.0°</div>
+            </div>
+          </div>
+        </div>
+        <div class="d-section">
+          <div class="d-label">UART LINK QUALITY</div>
+          <div class="link-bar"><div class="link-fill" id="link-fill" style="width:0%"></div></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- Chart strip -->
+<div id="charts">
+  <div class="chart-wrap">
+    <div class="chart-label">ALTITUDE m <span class="cl-val" id="cl-alt">0.0</span></div>
+    <div class="chart-ymax" id="cy-alt-max">0</div>
+    <div class="chart-ymin" id="cy-alt-min">0</div>
+    <div class="chart-apogee" id="apogee-line"></div>
+    <canvas class="chart-canvas" id="ch-alt"></canvas>
+  </div>
+  <div class="chart-wrap">
+    <div class="chart-label">PITCH deg</div>
+    <div class="chart-ymax" id="cy-pitch-max">0</div>
+    <div class="chart-ymin" id="cy-pitch-min">0</div>
+    <canvas class="chart-canvas" id="ch-pitch"></canvas>
+  </div>
+  <div class="chart-wrap">
+    <div class="chart-label">ROLL deg</div>
+    <div class="chart-ymax" id="cy-roll-max">0</div>
+    <div class="chart-ymin" id="cy-roll-min">0</div>
+    <canvas class="chart-canvas" id="ch-roll"></canvas>
+  </div>
+  <div class="chart-wrap">
+    <div class="chart-label">GYRO X rad/s</div>
+    <div class="chart-ymax" id="cy-gx-max">0</div>
+    <div class="chart-ymin" id="cy-gx-min">0</div>
+    <canvas class="chart-canvas" id="ch-gx"></canvas>
+  </div>
+  <div class="chart-wrap">
+    <div class="chart-label">SERVO deg</div>
+    <div class="chart-ymax" id="cy-sv-max">0</div>
+    <div class="chart-ymin" id="cy-sv-min">0</div>
+    <canvas class="chart-canvas" id="ch-sv"></canvas>
+  </div>
+  <div class="chart-wrap">
+    <div class="chart-label">PID ERROR deg</div>
+    <div class="chart-ymax" id="cy-pid-max">0</div>
+    <div class="chart-ymin" id="cy-pid-min">0</div>
+    <canvas class="chart-canvas" id="ch-pid"></canvas>
+  </div>
+</div>
+
+<!-- Flight summary popup -->
+<div id="summary-overlay">
+  <div id="summary-box">
+    <h2>⬡ FLIGHT COMPLETE</h2>
+    <div class="sum-row"><span class="sk">Max altitude</span><span class="sv" id="sum-alt">—</span></div>
+    <div class="sum-row"><span class="sk">Max speed</span><span class="sv" id="sum-spd">—</span></div>
+    <div class="sum-row"><span class="sk">Max G-load</span><span class="sv" id="sum-g">—</span></div>
+    <div class="sum-row"><span class="sk">Max Mach</span><span class="sv" id="sum-mach">—</span></div>
+    <div class="sum-row"><span class="sk">Burn time</span><span class="sv" id="sum-burn">—</span></div>
+    <div class="sum-row"><span class="sk">Flight time</span><span class="sv" id="sum-time">—</span></div>
+    <button id="sum-close" onclick="document.getElementById('summary-overlay').classList.remove('show')">CLOSE</button>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+// ═══════════════════════════════════════════════════════════════════════════════
+// THREE.JS VIEWER
+// ═══════════════════════════════════════════════════════════════════════════════
+const threeCanvas = document.getElementById('three-canvas');
+const viewerDiv   = document.getElementById('viewer');
+
+const renderer = new THREE.WebGLRenderer({ canvas: threeCanvas, antialias: true });
+renderer.setClearColor(0x090c10, 1);
+renderer.setPixelRatio(window.devicePixelRatio);
+
+const scene  = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(45, 1, 0.001, 500);
+camera.position.set(0.5, 0.2, 2.5);
+camera.lookAt(0, 0, 0);
+
+scene.add(new THREE.AmbientLight(0x22d3ee, 0.2));
+const dlight = new THREE.DirectionalLight(0xffffff, 0.3);
+dlight.position.set(1, 2, 1);
+scene.add(dlight);
+
+// Grid
+const grid = new THREE.GridHelper(10, 10, 0x1e2d3d, 0x1e2d3d);   // 10m x 10m pad area, 1m cells (true scale)
+scene.add(grid);
+
+// Altitude marker rings — thin horizontal circles at regular height
+// intervals, giving a visual "ruler" once the rocket is high enough that
+// the ground grid alone gives no sense of scale. Rings fade in only once
+// the rocket climbs near/above them, and each carries a small altitude
+// label sprite so height is readable at a glance, not just implied.
+const ALT_RING_SPACING = 50;   // metres between rings
+const ALT_RING_COUNT   = 20;   // covers up to 1000m; extend if needed
+const altRings = [];
+
+function makeAltLabelSprite(text) {
+  const canvas = document.createElement('canvas');
+  canvas.width = 128; canvas.height = 32;
+  const ctx = canvas.getContext('2d');
+  ctx.font = '20px monospace';
+  ctx.fillStyle = 'rgba(148,163,184,0.75)';
+  ctx.fillText(text, 4, 22);
+  const tex = new THREE.CanvasTexture(canvas);
+  const mat = new THREE.SpriteMaterial({ map: tex, transparent: true, depthTest: false });
+  const sprite = new THREE.Sprite(mat);
+  sprite.scale.set(6, 1.5, 1);
+  return sprite;
+}
+
+for (let i = 1; i <= ALT_RING_COUNT; i++) {
+  const alt = i * ALT_RING_SPACING;
+  const ringGeo = new THREE.RingGeometry(5.4, 5.5, 48);
+  const ringMat = new THREE.MeshBasicMaterial({
+    color: 0x1e2d3d, transparent: true, opacity: 0, side: THREE.DoubleSide,
+  });
+  const ring = new THREE.Mesh(ringGeo, ringMat);
+  ring.rotation.x = -Math.PI / 2;
+  ring.position.y = alt;
+  scene.add(ring);
+
+  const label = makeAltLabelSprite(alt + 'm');
+  label.position.set(5.8, alt, 0);
+  scene.add(label);
+
+  altRings.push({ ring, label, alt });
+}
+
+function updateAltRings(currentAlt) {
+  // Fade each ring in as the rocket approaches/passes it, fade out once
+  // far below or (optionally) once well above, so only nearby rings
+  // clutter the view — keeps the "ruler" readable instead of showing
+  // all 20 rings at once regardless of altitude.
+  for (const { ring, label, alt } of altRings) {
+    const dist = Math.abs(currentAlt - alt);
+    const visRange = ALT_RING_SPACING * 3;   // rings within ~150m stay visible
+    const opacity = Math.max(0, 1 - dist / visRange) * 0.5;
+    ring.material.opacity = opacity;
+    label.material.opacity = Math.max(0, 1 - dist / visRange) * 0.85;
+  }
+}
+
+// Rocket group — nose points in +Y (up in Three.js)
+const rocketGroup = new THREE.Group();
+scene.add(rocketGroup);
+
+// Trajectory trail
+const TRAIL_MAX  = 600;
+const trailSimPts = [];
+const trailSimGeo = new THREE.BufferGeometry();
+const trailSimMat = new THREE.LineBasicMaterial({ color: 0x22d3ee, transparent: true, opacity: 0.7 });
+const trailSimLine = new THREE.Line(trailSimGeo, trailSimMat);
+scene.add(trailSimLine);
+
+// Exhaust plume particles
+const PLUME_COUNT = 80;
+const plumeGeo = new THREE.BufferGeometry();
+const plumePts = new Float32Array(PLUME_COUNT * 3);
+plumeGeo.setAttribute('position', new THREE.BufferAttribute(plumePts, 3));
+const plumeMat = new THREE.PointsMaterial({ color: 0xf97316, size: 0.015, transparent: true, opacity: 0.7 });
+const plumePoints = new THREE.Points(plumeGeo, plumeMat);
+scene.add(plumePoints);
+plumePoints.visible = false;
+
+const plumeVels = Array.from({length: PLUME_COUNT}, () => ({
+  x: (Math.random()-.5)*.04, y: -(Math.random()*.06+.02), z: (Math.random()-.5)*.04, life: Math.random()
+}));
+
+function updatePlume(rocketY, boosting) {
+  plumePoints.visible = boosting;
+  if (!boosting) return;
+  const pos = plumeGeo.attributes.position.array;
+  for (let i = 0; i < PLUME_COUNT; i++) {
+    const p = plumeVels[i];
+    p.life -= 0.04;
+    if (p.life <= 0) {
+      p.x = (Math.random()-.5)*.01; p.y = 0; p.z = (Math.random()-.5)*.01;
+      p.vx = (Math.random()-.5)*.04; p.vy = -(Math.random()*.06+.02); p.vz = (Math.random()-.5)*.04;
+      p.life = 1;
+    }
+    pos[i*3]   = rocketGroup.position.x + (p.x || 0);
+    pos[i*3+1] = rocketGroup.position.y + (p.y || 0) - 0.05;
+    pos[i*3+2] = rocketGroup.position.z + (p.z || 0);
+    if (p.vx) { p.x += p.vx; p.y += p.vy; p.z += p.vz; }
+  }
+  plumeGeo.attributes.position.needsUpdate = true;
+}
+
+// Orbit controls
+let drag = false, px0 = 0, py0 = 0, rotX = 0.2, rotY = 0.3;
+// User-controlled zoom MULTIPLIER (1.0 = default framing), separate from the
+// auto chase-distance below — scroll still zooms in/out around whatever
+// altitude-appropriate distance the camera has picked.
+let userZoom = 1.0;
+const pivot = new THREE.Group(); scene.add(pivot);
+
+threeCanvas.addEventListener('mousedown', e => { drag = true; px0 = e.clientX; py0 = e.clientY; });
+window.addEventListener('mouseup', () => drag = false);
+window.addEventListener('mousemove', e => {
+  if (!drag) return;
+  rotY += (e.clientX - px0) * 0.008; rotX += (e.clientY - py0) * 0.008;
+  px0 = e.clientX; py0 = e.clientY;
+});
+threeCanvas.addEventListener('wheel', e => { userZoom = Math.max(.15, Math.min(6, userZoom + e.deltaY * 0.001)); });
+
+// Load rocket STL
+function parseSTLBuffer(buf) {
+  const dv = new DataView(buf);
+  const n  = dv.getUint32(80, true);
+  if (buf.byteLength === 84 + n * 50) {
+    const pos = new Float32Array(n * 9);
+    for (let i = 0; i < n; i++) {
+      const off = 84 + i*50 + 12;
+      for (let j = 0; j < 9; j++) pos[i*9+j] = dv.getFloat32(off+j*4, true);
+    }
+    const g = new THREE.BufferGeometry();
+    g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+    g.computeVertexNormals();
+    return g;
+  }
+  const txt = new TextDecoder().decode(buf);
+  const verts = []; const re = /vertex\s+([\d.eE+\-]+)\s+([\d.eE+\-]+)\s+([\d.eE+\-]+)/g; let m;
+  while ((m = re.exec(txt))) verts.push(+m[1], +m[2], +m[3]);
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.BufferAttribute(new Float32Array(verts), 3));
+  g.computeVertexNormals(); return g;
+}
+
+let rocketLoaded  = false;
+let rocketLenM    = 0.8;   // real rocket length in metres — updated once /aero resolves
+
+Promise.all([
+  fetch('/upload/stl/assembly/file').then(r => r.arrayBuffer()),
+  fetch('/aero').then(r => r.json()).catch(() => null),
+]).then(([buf, aero]) => {
+  const geo = parseSTLBuffer(buf);
+  geo.computeBoundingBox();
+  const bb  = geo.boundingBox;
+  const sz  = new THREE.Vector3(); bb.getSize(sz);
+  const ctr = new THREE.Vector3(); bb.getCenter(ctr);
+
+  // TRUE-SCALE fix: previously every rocket was force-normalised to a fixed
+  // 1.4 Three.js units regardless of its real size, completely disconnected
+  // from the position scale used elsewhere — that's why the rocket looked
+  // huge and barely appeared to climb even at real apogees of several
+  // hundred metres. Now: 1 Three.js unit = 1 real metre, using the actual
+  // Barrowman-derived rocket length (aero.rocket_length, metres) as the
+  // ground truth for how many real metres the raw STL's long axis spans.
+  if (aero && aero.rocket_length > 0) rocketLenM = aero.rocket_length;
+  const rawLength = sz.z;   // STL's long axis extent, in the file's raw units
+  const trueScale = rocketLenM / Math.max(rawLength, 1e-6);
+
+  // Centre X/Y (remove any horizontal STL offset) but do NOT centre Z —
+  // instead pin the TAIL (bb.min.z, per the Inventor "tail at Z=0" export
+  // convention) to the origin, so after rotation the rocket's bottom sits
+  // exactly on the grid instead of straddling it at its midpoint.
+  geo.translate(-ctr.x, -ctr.y, -bb.min.z);
+  geo.scale(trueScale, trueScale, trueScale);
+
+  // Rocket axis is Z in our convention (tail=0, nose=top).
+  // Rotate so it points UP in Three.js (+Y). Tail (z=0 pre-rotation) maps
+  // to y=0 post-rotation, so it lands exactly on the grid.
+  geo.applyMatrix4(new THREE.Matrix4().makeRotationX(-Math.PI / 2));
+
+  const solid = new THREE.Mesh(geo, new THREE.MeshPhongMaterial({
+    color: 0x0e7490, transparent: true, opacity: 0.07, side: THREE.DoubleSide
+  }));
+  const wire = new THREE.LineSegments(
+    new THREE.WireframeGeometry(geo),
+    new THREE.LineBasicMaterial({ color: 0x22d3ee, transparent: true, opacity: 0.6 })
+  );
+  rocketGroup.add(solid, wire);
+  rocketLoaded = true;
+}).catch(() => {
+  // Fallback: simple true-scale capsule if no STL — same tail-at-origin
+  // convention as the real STL path (Three.js cylinders/cones are centred
+  // on their own origin by default, so both need an explicit shift to
+  // sit base-down on the grid instead of straddling it).
+  const bodyLen = rocketLenM * 0.83;
+  const noseLen = rocketLenM * 0.17;
+  const radius  = rocketLenM * 0.05;
+  const cyl  = new THREE.CylinderGeometry(radius, radius, bodyLen, 16);
+  cyl.translate(0, bodyLen/2, 0);              // base at y=0, top at y=bodyLen
+  const cone = new THREE.ConeGeometry(radius, noseLen, 16);
+  cone.translate(0, bodyLen + noseLen/2, 0);    // sits directly on top of the cylinder
+  const wire1 = new THREE.LineSegments(new THREE.WireframeGeometry(cyl), new THREE.LineBasicMaterial({color:0x22d3ee, transparent:true, opacity:.6}));
+  const wire2 = new THREE.LineSegments(new THREE.WireframeGeometry(cone), new THREE.LineBasicMaterial({color:0x22d3ee, transparent:true, opacity:.6}));
+  rocketGroup.add(wire1, wire2);
+  rocketLoaded = true;
+});
+
+// Resize
+function resizeViewer() {
+  const w = viewerDiv.clientWidth, h = viewerDiv.clientHeight;
+  renderer.setSize(w, h);
+  camera.aspect = w / h;
+  camera.updateProjectionMatrix();
+}
+resizeViewer();
+new ResizeObserver(resizeViewer).observe(viewerDiv);
+
+let rocketAlt = 0, isBoost = false;
+
+// TRUE-SCALE fix: previously position used a separate 0.001 compression
+// factor that had no relationship to the rocket's (also arbitrarily
+// scaled) visual size — a real ~500m apogee only moved the rocket 0.5
+// Three.js units while the rocket itself was forced to 1.4 units, so it
+// looked huge and barely climbed. Now both geometry AND position share
+// the same 1-unit-per-metre scale, so relative sizes are physically
+// accurate — a chase camera (below) handles keeping the rocket visible
+// across the huge size range between "sitting on the pad" and "500m up".
+const SCALE_M = 1.0;
+
+// Chase-camera distance grows with altitude so the rocket stays framed
+// across the full flight, but PULLS BACK SLOWLY relative to how fast the
+// rocket is actually climbing — a 1:1 pullback rate would just recreate
+// the original bug in a different form (camera zooming out exactly as
+// fast as the rocket climbs makes the climb look just as static on
+// screen). This rate is tuned so the rocket visibly travels a large
+// fraction of the frame during a typical flight, with the camera only
+// pulling back enough to keep it from leaving frame entirely.
+function chaseDistance(altitude) {
+  const minDist = Math.max(rocketLenM * 2.2, 1.5);   // close-up framing on the pad
+  return minDist + altitude * 0.12;                   // gentle pullback — climb stays dramatic
+}
+
+// Smoothed camera state — the raw chaseDistance/lookY targets can jump
+// significantly frame-to-frame during a fast boost phase (the rocket can
+// gain tens of m/s very quickly), which made the camera look like it was
+// "losing" the rocket. Easing the actual camera position toward the
+// target each frame (rather than snapping straight to it) gives the
+// camera inertia, like a real chase cam or a damped follow-rig, so fast
+// climbs read as smooth tracking instead of jittery lag.
+let smoothedDist  = null;
+let smoothedLookY = 0;
+const CAMERA_EASE = 0.06;   // lower = smoother/slower to catch up, higher = snappier
+
+function animate3D() {
+  requestAnimationFrame(animate3D);
+
+  const targetDist  = chaseDistance(rocketGroup.position.y) * userZoom;
+  const targetLookY = rocketGroup.position.y * 0.5;
+
+  if (smoothedDist === null) smoothedDist = targetDist;   // no easing on first frame
+  smoothedDist  += (targetDist  - smoothedDist)  * CAMERA_EASE;
+  smoothedLookY += (targetLookY - smoothedLookY) * CAMERA_EASE;
+
+  camera.position.x = Math.sin(rotY) * Math.cos(rotX) * smoothedDist;
+  camera.position.y = Math.sin(rotX) * smoothedDist + smoothedLookY;
+  camera.position.z = Math.cos(rotY) * Math.cos(rotX) * smoothedDist;
+  camera.lookAt(rocketGroup.position.x, smoothedLookY, rocketGroup.position.z);
+
+  updateAltRings(rocketGroup.position.y);
+  updatePlume(rocketGroup.position.y, isBoost);
+  renderer.render(scene, camera);
+}
+animate3D();
+
+function updateRocket3D(d) {
+  // Position (compressed scale so rocket stays visible)
+  rocketGroup.position.set(d.pos[0] * SCALE_M, d.pos[2] * SCALE_M, d.pos[1] * SCALE_M);
+
+  // Attitude from quaternion [w, x, y, z]
+  // Our convention: quaternion rotates rocket from Z-up to world frame
+  // In Three.js Y-up, we need to rotate accordingly
+  const q = d.attitude_q; // [w, x, y, z]
+  rocketGroup.quaternion.set(q[1], q[3], q[2], q[0]);
+
+  // Trail
+  trailSimPts.push(new THREE.Vector3(
+    d.pos[0] * SCALE_M, d.pos[2] * SCALE_M, d.pos[1] * SCALE_M
+  ));
+  if (trailSimPts.length > TRAIL_MAX) trailSimPts.shift();
+  trailSimGeo.setFromPoints(trailSimPts);
+
+  rocketAlt = d.pos[2];
+  isBoost   = d.phase === 'BOOST';
+
+  // Badge
+  document.getElementById('badge-phase').textContent = d.phase;
+  document.getElementById('badge-motor').textContent  = d.motor_name;
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// ADI — Attitude Direction Indicator
+// ═══════════════════════════════════════════════════════════════════════════════
+const adiCanvas = document.getElementById('adi');
+const adiCtx    = adiCanvas.getContext('2d');
+const adiR      = 46; // radius
+
+function drawADI(pitchDeg, rollDeg) {
+  const W = adiCanvas.width, H = adiCanvas.height;
+  const cx = W/2, cy = H/2;
+
+  adiCtx.clearRect(0, 0, W, H);
+
+  // Clip to circle
+  adiCtx.save();
+  adiCtx.beginPath();
+  adiCtx.arc(cx, cy, adiR, 0, Math.PI*2);
+  adiCtx.clip();
+
+  // Pitch offset: 1px per degree
+  const pitchPx = pitchDeg * 1.2;
+  const rollRad  = rollDeg * Math.PI / 180;
+
+  adiCtx.save();
+  adiCtx.translate(cx, cy);
+  adiCtx.rotate(-rollRad);
+  adiCtx.translate(0, pitchPx);
+
+  // Sky
+  adiCtx.fillStyle = '#0c2a4a';
+  adiCtx.fillRect(-W, -H, W*2, H);
+
+  // Ground
+  adiCtx.fillStyle = '#2d1a08';
+  adiCtx.fillRect(-W, 0, W*2, H);
+
+  // Horizon line
+  adiCtx.strokeStyle = '#e2e8f0';
+  adiCtx.lineWidth = 1.5;
+  adiCtx.beginPath();
+  adiCtx.moveTo(-W, 0); adiCtx.lineTo(W, 0);
+  adiCtx.stroke();
+
+  // Pitch ladder (every 10 deg)
+  adiCtx.strokeStyle = 'rgba(226,232,240,0.5)';
+  adiCtx.fillStyle   = 'rgba(226,232,240,0.5)';
+  adiCtx.lineWidth   = 0.8;
+  adiCtx.font        = '7px monospace';
+  for (let deg = -30; deg <= 30; deg += 10) {
+    if (deg === 0) continue;
+    const y = -deg * 1.2;
+    const hw = deg % 20 === 0 ? 18 : 10;
+    adiCtx.beginPath();
+    adiCtx.moveTo(-hw, y); adiCtx.lineTo(hw, y);
+    adiCtx.stroke();
+    adiCtx.fillText(Math.abs(deg), hw+3, y+3);
+  }
+
+  adiCtx.restore();
+
+  // Fixed crosshair (does not rotate)
+  adiCtx.strokeStyle = '#f97316';
+  adiCtx.lineWidth = 1.5;
+  // Left wing
+  adiCtx.beginPath(); adiCtx.moveTo(cx-30, cy); adiCtx.lineTo(cx-10, cy); adiCtx.stroke();
+  // Right wing
+  adiCtx.beginPath(); adiCtx.moveTo(cx+10, cy); adiCtx.lineTo(cx+30, cy); adiCtx.stroke();
+  // Center dot
+  adiCtx.beginPath(); adiCtx.arc(cx, cy, 2, 0, Math.PI*2);
+  adiCtx.fillStyle = '#f97316'; adiCtx.fill();
+
+  adiCtx.restore();
+
+  // Circle border
+  adiCtx.beginPath();
+  adiCtx.arc(cx, cy, adiR, 0, Math.PI*2);
+  adiCtx.strokeStyle = '#2a3f55';
+  adiCtx.lineWidth   = 2;
+  adiCtx.stroke();
+}
+
+drawADI(0, 0);
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// CHARTS
+// ═══════════════════════════════════════════════════════════════════════════════
+const CHART_WINDOW = 30; // seconds of data shown
+const CHART_BUF    = 1200; // max points buffered
+
+const chartData = {
+  alt:   { sim: [], hw: [], color: '#22d3ee', hw_color: '#f97316' },
+  pitch: { sim: [], hw: [], color: '#22d3ee', hw_color: '#f97316' },
+  roll:  { sim: [], hw: [], color: '#22d3ee', hw_color: '#f97316' },
+  gx:    { sim: [],         color: '#22d3ee' },
+  sv:    { pitch: [], yaw: [] },
+  pid:   { data: [] },
+};
+
+let apogeeTime = null, apogeeAlt = 0, prevVz = 0;
+
+function pushChart(key, t, simVal, hwVal) {
+  const d = chartData[key];
+  d.sim.push({t, v: simVal});
+  if (hwVal !== undefined && d.hw) d.hw.push({t, v: hwVal});
+  if (d.sim.length > CHART_BUF) d.sim.shift();
+  if (d.hw && d.hw.length > CHART_BUF) d.hw.shift();
+}
+
+function drawChart(canvasId, series, opts = {}) {
+  const canvas = document.getElementById(canvasId);
+  if (!canvas) return;
+  const W = canvas.offsetWidth, H = canvas.offsetHeight;
+  if (!W || !H) return;
+  canvas.width = W; canvas.height = H;
+  const ctx = canvas.getContext('2d');
+
+  ctx.clearRect(0, 0, W, H);
+
+  // Grid
+  ctx.strokeStyle = 'rgba(30,45,61,0.8)';
+  ctx.lineWidth   = 0.5;
+  for (let i = 1; i < 4; i++) {
+    ctx.beginPath();
+    ctx.moveTo(0, H*i/4); ctx.lineTo(W, H*i/4);
+    ctx.stroke();
+  }
+  for (let i = 1; i < 5; i++) {
+    ctx.beginPath();
+    ctx.moveTo(W*i/5, 0); ctx.lineTo(W*i/5, H);
+    ctx.stroke();
+  }
+
+  if (!series.length || !series[0].data.length) return;
+
+  const now   = series[0].data[series[0].data.length - 1].t;
+  const tMin  = now - CHART_WINDOW;
+  let   yMin  = Infinity, yMax = -Infinity;
+
+  series.forEach(s => {
+    s.data.forEach(p => {
+      if (p.t < tMin) return;
+      if (p.v < yMin) yMin = p.v;
+      if (p.v > yMax) yMax = p.v;
+    });
+  });
+
+  if (!isFinite(yMin)) return;
+
+  const pad = (yMax - yMin) * 0.1 || 1;
+  yMin -= pad; yMax += pad;
+
+  const tx = t => (t - tMin) / CHART_WINDOW * W;
+  const ty = v => H - (v - yMin) / (yMax - yMin) * H;
+
+  // Time axis labels
+  ctx.fillStyle = 'rgba(100,116,139,0.7)';
+  ctx.font = '8px monospace';
+  for (let dt = 0; dt <= CHART_WINDOW; dt += 10) {
+    const x = tx(tMin + dt);
+    const label = (tMin + dt).toFixed(0) + 's';
+    ctx.fillText(label, x + 2, H - 3);
+  }
+
+  // Draw series
+  series.forEach(s => {
+    if (!s.data.length) return;
+    ctx.beginPath();
+    ctx.strokeStyle = s.color;
+    ctx.lineWidth   = 1.2;
+    let started = false;
+    s.data.forEach(p => {
+      if (p.t < tMin) return;
+      const x = tx(p.t), y = ty(p.v);
+      if (!started) { ctx.moveTo(x, y); started = true; }
+      else ctx.lineTo(x, y);
+    });
+    ctx.stroke();
+  });
+
+  // Apogee marker on altitude chart
+  if (opts.apogee && apogeeTime !== null) {
+    const ax = tx(apogeeTime);
+    if (ax > 0 && ax < W) {
+      ctx.strokeStyle = 'rgba(234,179,8,0.6)';
+      ctx.lineWidth = 1;
+      ctx.setLineDash([3, 3]);
+      ctx.beginPath(); ctx.moveTo(ax, 0); ctx.lineTo(ax, H); ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.fillStyle = 'rgba(234,179,8,0.8)';
+      ctx.font = '8px monospace';
+      ctx.fillText('APOGEE', ax + 2, 12);
+    }
+  }
+
+  // Y labels
+  const maxEl = document.getElementById(opts.ymaxId);
+  const minEl = document.getElementById(opts.yminId);
+  if (maxEl) maxEl.textContent = yMax.toFixed(1);
+  if (minEl) minEl.textContent = yMin.toFixed(1);
+}
+
+function redrawAllCharts() {
+  drawChart('ch-alt', [
+    { data: chartData.alt.sim, color: '#22d3ee' },
+    { data: chartData.alt.hw,  color: '#f97316' }
+  ], { apogee: true, ymaxId: 'cy-alt-max', yminId: 'cy-alt-min' });
+
+  drawChart('ch-pitch', [
+    { data: chartData.pitch.sim, color: '#22d3ee' },
+    { data: chartData.pitch.hw,  color: '#f97316' }
+  ], { ymaxId: 'cy-pitch-max', yminId: 'cy-pitch-min' });
+
+  drawChart('ch-roll', [
+    { data: chartData.roll.sim, color: '#22d3ee' },
+    { data: chartData.roll.hw,  color: '#f97316' }
+  ], { ymaxId: 'cy-roll-max', yminId: 'cy-roll-min' });
+
+  drawChart('ch-gx', [
+    { data: chartData.gx.sim, color: '#22d3ee' }
+  ], { ymaxId: 'cy-gx-max', yminId: 'cy-gx-min' });
+
+  drawChart('ch-sv', [
+    { data: chartData.sv.pitch, color: '#22d3ee' },
+    { data: chartData.sv.yaw,   color: '#f97316' }
+  ], { ymaxId: 'cy-sv-max', yminId: 'cy-sv-min' });
+
+  drawChart('ch-pid', [
+    { data: chartData.pid.data, color: '#ef4444' }
+  ], { ymaxId: 'cy-pid-max', yminId: 'cy-pid-min' });
+}
+
+setInterval(redrawAllCharts, 100);
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// SCRUBBER
+// ═══════════════════════════════════════════════════════════════════════════════
+let isLive      = true;
+let historyBuf  = [];
+let scrubbing   = false;
+
+document.getElementById('scrub').addEventListener('mousedown', () => { scrubbing = true; isLive = false; updateLiveBtn(); });
+document.getElementById('scrub').addEventListener('mouseup',   () => { scrubbing = false; });
+document.getElementById('scrub').addEventListener('input', () => {
+  const idx = Math.floor(document.getElementById('scrub').value / 1000 * (historyBuf.length - 1));
+  if (historyBuf[idx]) applyState(historyBuf[idx]);
+});
+
+function goLive() {
+  isLive = true;
+  document.getElementById('scrub').value = 1000;
+  updateLiveBtn();
+  fetch('/resume', { method: 'POST' });
+}
+
+function updateLiveBtn() {
+  const btn = document.getElementById('btn-live');
+  btn.className = isLive ? '' : 'dead';
+}
+
+// Sync history from server periodically
+setInterval(async () => {
+  const res = await fetch('/history');
+  historyBuf = await res.json();
+}, 5000);
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// WEBSOCKET + STATE UPDATE
+// ═══════════════════════════════════════════════════════════════════════════════
+const fmt  = (v, d=2) => typeof v === 'number' ? v.toFixed(d) : '—';
+const set  = (id, v)  => { const el = document.getElementById(id); if (el) el.textContent = v; };
+
+let flightStats = { maxAlt: 0, maxSpd: 0, maxG: 0, maxMach: 0, burnEnd: 0 };
+let prevPhase   = 'IDLE';
+let wasBoosting = false;
+
+function applyState(d) {
+  // Header metrics
+  const t = d.t;
+  const mm = String(Math.floor(t / 60)).padStart(2, '0');
+  const ss = (t % 60).toFixed(1).padStart(4, '0');
+  set('clock',   `T+${mm}:${ss}`);
+  set('hm-alt',  fmt(d.pos[2], 1));
+  set('hm-vz',   fmt(d.vel[2], 1));
+  set('hm-spd',  fmt(d.speed, 1));
+  set('hm-mach', fmt(d.mach, 3));
+  set('hm-g',    fmt(d.g_load, 2));
+  set('hm-hz',   fmt(d.hz, 0));
+
+  // Phase pill
+  const phaseEl = document.getElementById('pill-phase');
+  phaseEl.textContent = d.phase;
+  phaseEl.className = 'pill' + (d.phase === 'BOOST' ? ' ok' : d.phase === 'LANDED' ? ' warn' : d.phase === 'COAST' ? ' on' : '');
+
+  // Paused
+  document.getElementById('pill-paused').style.display = d.paused ? 'block' : 'none';
+
+  // HW pill
+  const hwEl = document.getElementById('pill-hw');
+  hwEl.textContent  = d.hw_connected ? 'HW CONNECTED' : 'HW OFFLINE';
+  hwEl.className    = 'pill' + (d.hw_connected ? ' ok' : '');
+
+  // ADI
+  drawADI(d.euler[0], d.euler[1]);
+
+  // Euler
+  set('e-pitch', fmt(d.euler[0], 1) + '°');
+  set('e-roll',  fmt(d.euler[1], 1) + '°');
+  set('e-yaw',   fmt(d.euler[2], 1) + '°');
+
+  // Angular rates
+  set('ar-x', fmt(d.angular_rate[0], 4));
+  set('ar-y', fmt(d.angular_rate[1], 4));
+  set('ar-z', fmt(d.angular_rate[2], 4));
+
+  // Motor state
+  set('ms-thrust', fmt(d.thrust, 1) + ' N');
+  set('ms-burn',   d.phase === 'BOOST' ? fmt(d.burn_remaining, 2) + ' s' : '—');
+  set('ms-phase',  d.phase);
+
+  // Position
+  set('p-x', fmt(d.pos[0])); set('p-y', fmt(d.pos[1])); set('p-z', fmt(d.pos[2]));
+
+  // Velocity
+  set('v-x', fmt(d.vel[0])); set('v-y', fmt(d.vel[1])); set('v-z', fmt(d.vel[2]));
+  set('v-spd', fmt(d.speed));
+
+  // Acceleration
+  set('a-x', fmt(d.accel[0], 3)); set('a-y', fmt(d.accel[1], 3)); set('a-z', fmt(d.accel[2], 3));
+
+  // Aero
+  set('aero-q',    fmt(d.dynamic_pressure, 1) + ' Pa');
+  set('aero-drag', fmt(d.drag_force, 2) + ' N');
+  set('aero-mach', fmt(d.mach, 3));
+  set('aero-g',    fmt(d.g_load, 2));
+  set('aero-aoa',  fmt(d.aoa, 2) + '°');
+
+  // Sensors
+  set('imu-ax', fmt(d.imu_accel[0], 3)); set('imu-ay', fmt(d.imu_accel[1], 3)); set('imu-az', fmt(d.imu_accel[2], 3));
+  set('imu-gx', fmt(d.imu_gyro[0], 4));  set('imu-gy', fmt(d.imu_gyro[1], 4));  set('imu-gz', fmt(d.imu_gyro[2], 4));
+  set('baro-est',  fmt(d.baro_alt, 1) + ' m');
+  set('baro-true', fmt(d.baro_true_alt, 1) + ' m');
+  set('baro-err',  (d.baro_error >= 0 ? '+' : '') + fmt(d.baro_error, 2) + ' m');
+  set('uart-sent', d.uart_packets_sent);
+  set('uart-rate', fmt(d.uart_packet_rate, 1) + ' Hz');
+  set('uart-last', d.uart_last_packet || '—');
+
+  // HW panel
+  const hwOnline = d.hw_connected;
+  document.getElementById('hw-offline-msg').style.display  = hwOnline ? 'none' : 'flex';
+  document.getElementById('hw-online-content').style.display = hwOnline ? 'block' : 'none';
+  if (hwOnline) {
+    set('hw-ax', fmt(d.hw_imu_accel[0], 3)); set('hw-ay', fmt(d.hw_imu_accel[1], 3)); set('hw-az', fmt(d.hw_imu_accel[2], 3));
+    set('hw-gx', fmt(d.hw_imu_gyro[0], 3));  set('hw-gy', fmt(d.hw_imu_gyro[1], 3));  set('hw-gz', fmt(d.hw_imu_gyro[2], 3));
+    set('hw-pitch', fmt(d.hw_attitude[0], 1) + '°');
+    set('hw-roll',  fmt(d.hw_attitude[1], 1) + '°');
+    set('hw-yaw',   fmt(d.hw_attitude[2], 1) + '°');
+
+    // Servo gauges (assume ±15° max deflection)
+    const spct = Math.max(0, Math.min(100, (d.hw_servo_pitch / 15 + 1) / 2 * 100));
+    const ypct = Math.max(0, Math.min(100, (d.hw_servo_yaw   / 15 + 1) / 2 * 100));
+    document.getElementById('sv-pitch-needle').style.left = spct + '%';
+    document.getElementById('sv-yaw-needle').style.left   = ypct + '%';
+    const pw = Math.abs(d.hw_servo_pitch) > 10;
+    const yw = Math.abs(d.hw_servo_yaw)   > 10;
+    document.getElementById('sv-pitch-needle').className = 'servo-needle' + (pw ? ' warn' : '');
+    document.getElementById('sv-yaw-needle').className   = 'servo-needle' + (yw ? ' warn' : '');
+    set('sv-pitch-val', fmt(d.hw_servo_pitch, 1) + '°');
+    set('sv-yaw-val',   fmt(d.hw_servo_yaw,   1) + '°');
+    document.getElementById('link-fill').style.width = (d.hw_link_quality * 100) + '%';
+  }
+
+  // 3D viewer
+  updateRocket3D(d);
+
+  // Chart data
+  pushChart('alt',   t, d.pos[2],    d.hw_connected ? d.hw_attitude[0] : undefined);
+  pushChart('pitch', t, d.euler[0],  d.hw_connected ? d.hw_attitude[0] : undefined);
+  pushChart('roll',  t, d.euler[1],  d.hw_connected ? d.hw_attitude[1] : undefined);
+  chartData.gx.sim.push({t, v: d.angular_rate[0]});
+  if (chartData.gx.sim.length > CHART_BUF) chartData.gx.sim.shift();
+  chartData.sv.pitch.push({t, v: d.hw_servo_pitch});
+  chartData.sv.yaw.push({t, v: d.hw_servo_yaw});
+  if (chartData.sv.pitch.length > CHART_BUF) chartData.sv.pitch.shift();
+  if (chartData.sv.yaw.length   > CHART_BUF) chartData.sv.yaw.shift();
+  const pidErr = Math.sqrt(d.hw_pid_error[0]**2 + d.hw_pid_error[1]**2);
+  chartData.pid.data.push({t, v: pidErr});
+  if (chartData.pid.data.length > CHART_BUF) chartData.pid.data.shift();
+
+  // Apogee detection
+  const vz = d.vel[2];
+  if (wasBoosting && vz < 0 && prevVz >= 0 && d.pos[2] > 1) {
+    apogeeTime = t;
+    apogeeAlt  = d.pos[2];
+  }
+  if (d.phase === 'BOOST') wasBoosting = true;
+  prevVz = vz;
+
+  // Flight stats
+  flightStats.maxAlt  = Math.max(flightStats.maxAlt,  d.pos[2]);
+  flightStats.maxSpd  = Math.max(flightStats.maxSpd,  d.speed);
+  flightStats.maxG    = Math.max(flightStats.maxG,    d.g_load);
+  flightStats.maxMach = Math.max(flightStats.maxMach, d.mach);
+  if (d.phase === 'BOOST') flightStats.burnEnd = t;
+
+  // Landing detection — show summary once
+  if (d.phase === 'LANDED' && prevPhase !== 'LANDED') {
+    setTimeout(() => showSummary(d), 800);
+  }
+  prevPhase = d.phase;
+
+  // Scrubber time display
+  set('scrub-time', `T+${mm}:${ss}`);
+}
+
+function showSummary(d) {
+  set('sum-alt',  fmt(flightStats.maxAlt, 1) + ' m');
+  set('sum-spd',  fmt(flightStats.maxSpd, 1) + ' m/s');
+  set('sum-g',    fmt(flightStats.maxG, 2) + ' G');
+  set('sum-mach', fmt(flightStats.maxMach, 3));
+  set('sum-burn', fmt(flightStats.burnEnd, 2) + ' s');
+  const mm2 = String(Math.floor(d.t/60)).padStart(2,'0');
+  const ss2 = (d.t%60).toFixed(1).padStart(4,'0');
+  set('sum-time', `${mm2}:${ss2}`);
+  document.getElementById('summary-overlay').classList.add('show');
+}
+
+// WebSocket
+const ws = new WebSocket(`ws://${location.host}/ws`);
+ws.onmessage = e => {
+  if (!isLive || scrubbing) return;
+  const d = JSON.parse(e.data);
+  applyState(d);
+};
+ws.onclose = () => set('pill-sim', 'SIM OFFLINE');
+</script>
+</body>
+</html>

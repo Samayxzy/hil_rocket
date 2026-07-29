@@ -1,0 +1,614 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MONK HIL — Mission Setup</title>
+<style>
+:root {
+  --bg:       #090c10;
+  --bg-p:     #0d1117;
+  --bg-c:     #111820;
+  --border:   #1e2d3d;
+  --border-h: #2a3f55;
+  --teal:     #22d3ee;
+  --teal-d:   #0e7490;
+  --orange:   #f97316;
+  --green:    #22c55e;
+  --red:      #ef4444;
+  --text:     #e2e8f0;
+  --dim:      #64748b;
+  --mid:      #94a3b8;
+  --mono:     'JetBrains Mono','Fira Code','Courier New',monospace;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow:hidden}
+body{background:var(--bg);color:var(--text);font-family:var(--mono);font-size:12px;display:flex;flex-direction:column}
+
+/* Header */
+header{display:flex;align-items:center;gap:10px;padding:0 14px;height:44px;background:var(--bg-p);border-bottom:1px solid var(--border);flex-shrink:0}
+.logo{font-size:14px;font-weight:700;letter-spacing:.15em;color:var(--teal)}
+.logo span{color:var(--dim);font-weight:400}
+.hpill{font-size:9px;padding:2px 7px;border-radius:3px;border:1px solid var(--border);color:var(--dim);letter-spacing:.1em}
+
+/* Main */
+.main{display:flex;flex:1;overflow:hidden}
+
+/* Viewer */
+.viewer-section{position:relative;flex:1;border-right:1px solid var(--border);background:var(--bg);display:flex;flex-direction:column;min-width:0}
+.viewer-header{display:flex;align-items:center;justify-content:space-between;padding:7px 12px;border-bottom:1px solid var(--border);flex-shrink:0}
+.viewer-header .lbl{font-size:9px;letter-spacing:.12em;color:var(--dim)}
+#canvas-container{flex:1;position:relative}
+#viewer-canvas{width:100%;height:100%;display:block}
+.upload-prompt{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;color:var(--dim);pointer-events:none}
+.upload-prompt p{font-size:11px}
+.viewer-overlay{position:absolute;bottom:12px;left:12px;display:flex;flex-direction:column;gap:5px}
+.stat-chip{background:rgba(9,12,16,.88);border:1px solid var(--border);border-radius:5px;padding:4px 9px;display:flex;gap:8px;align-items:baseline}
+.stat-chip .k{font-size:8px;color:var(--dim);letter-spacing:.1em}
+.stat-chip .v{font-size:12px;color:var(--teal)}
+.tag{display:inline-block;font-size:9px;padding:2px 6px;border-radius:3px;letter-spacing:.08em}
+.tag-ok{background:rgba(34,197,94,.1);color:var(--green);border:1px solid rgba(34,197,94,.3)}
+.tag-warn{background:rgba(249,115,22,.1);color:var(--orange);border:1px solid rgba(249,115,22,.3)}
+.tag-dim{background:rgba(100,116,139,.1);color:var(--dim);border:1px solid var(--border)}
+
+/* Config panel */
+.config-panel{width:340px;flex-shrink:0;background:var(--bg-p);display:flex;flex-direction:column;overflow-y:auto}
+@media(max-width:1100px){
+  .main{flex-direction:column}
+  .viewer-section{border-right:none;border-bottom:1px solid var(--border);height:40vh;flex:none;min-height:200px}
+  .config-panel{width:100% !important;flex:1;overflow-y:auto;min-height:0}
+}
+.section{border-bottom:1px solid var(--border);padding:12px 14px}
+.section-title{font-size:9px;letter-spacing:.14em;color:var(--dim);margin-bottom:10px;display:flex;align-items:center;gap:8px}
+.section-title::after{content:'';flex:1;height:1px;background:var(--border)}
+
+/* Upload zone */
+.upload-zone{border:1px dashed var(--border-h);border-radius:5px;padding:16px;text-align:center;cursor:pointer;transition:border-color .15s,background .15s;position:relative}
+.upload-zone:hover,.upload-zone.drag-over{border-color:var(--teal-d);background:rgba(34,211,238,.04)}
+.upload-zone input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer}
+.upload-zone .uz-icon{font-size:20px;margin-bottom:5px;opacity:.45}
+.upload-zone .uz-text{font-size:11px;color:var(--mid)}
+.upload-zone .uz-sub{font-size:9px;color:var(--dim);margin-top:3px}
+.upload-zone.has-file{border-color:var(--teal-d);background:rgba(34,211,238,.04)}
+.upload-zone.has-file .uz-text{color:var(--teal)}
+
+/* Aero grid */
+.aero-grid{display:grid;grid-template-columns:1fr 1fr;gap:5px}
+.aero-cell{background:var(--bg-c);border:1px solid var(--border);border-radius:4px;padding:6px 9px}
+.aero-cell .ak{font-size:8px;color:var(--dim);letter-spacing:.08em;margin-bottom:2px}
+.aero-cell .av{font-size:12px;color:var(--teal)}
+
+/* Inputs */
+select,input[type=text],input[type=number]{background:var(--bg-c);border:1px solid var(--border);border-radius:4px;color:var(--text);font-family:var(--mono);font-size:12px;padding:6px 8px;width:100%;outline:none;transition:border-color .15s}
+select:focus,input:focus{border-color:var(--teal-d)}
+select option{background:var(--bg-c)}
+
+.param-row{margin-bottom:6px}
+.param-row label{font-size:8px;color:var(--dim);display:block;margin-bottom:3px;letter-spacing:.08em}
+.param-hint{font-size:9px;color:var(--dim);margin-top:2px}
+.input-unit{display:flex}
+.input-unit input{border-radius:4px 0 0 4px;border-right:none}
+.unit-badge{background:var(--bg);border:1px solid var(--border);border-radius:0 4px 4px 0;padding:6px 8px;font-size:10px;color:var(--dim);white-space:nowrap}
+
+/* Motor */
+.motor-row{display:grid;grid-template-columns:1fr auto;gap:6px;margin-bottom:7px}
+.eng-btn{background:var(--bg-c);border:1px solid var(--border);border-radius:4px;color:var(--dim);font-family:var(--mono);font-size:11px;padding:6px 10px;cursor:pointer;white-space:nowrap;position:relative}
+.eng-btn:hover{border-color:var(--border-h);color:var(--text)}
+.eng-btn input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer}
+.motor-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:4px;margin-top:6px}
+.motor-stat{background:var(--bg-c);border:1px solid var(--border);border-radius:4px;padding:5px 6px}
+.motor-stat .mk{font-size:7px;color:var(--dim);letter-spacing:.08em;margin-bottom:2px}
+.motor-stat .mv{font-size:11px;color:var(--orange)}
+.custom-fields{display:none}
+.custom-fields.visible{display:block;margin-top:8px}
+.custom-row{margin-bottom:6px}
+.custom-row label{font-size:8px;color:var(--dim);display:block;margin-bottom:3px;letter-spacing:.08em}
+.tc-table{width:100%;border-collapse:collapse;font-size:11px;margin-top:5px}
+.tc-table th{font-size:8px;color:var(--dim);padding:3px 5px;text-align:left;border-bottom:1px solid var(--border)}
+.tc-table td{padding:2px 3px}
+.add-row-btn{background:none;border:1px dashed var(--border-h);color:var(--dim);font-family:var(--mono);font-size:10px;padding:3px;width:100%;border-radius:4px;cursor:pointer;margin-top:4px}
+.add-row-btn:hover{border-color:var(--teal-d);color:var(--teal)}
+
+/* Launch */
+.launch-section{padding:14px;margin-top:auto;flex-shrink:0}
+.launch-btn{width:100%;padding:11px;background:linear-gradient(135deg,#f97316,#ea580c);border:none;border-radius:5px;color:#fff;font-family:var(--mono);font-size:13px;font-weight:700;letter-spacing:.12em;cursor:pointer;transition:opacity .15s}
+.launch-btn:hover{opacity:.9}
+.launch-btn:disabled{opacity:.4;cursor:not-allowed}
+.launch-status{font-size:10px;color:var(--dim);text-align:center;margin-top:7px;min-height:14px}
+.launch-status.err{color:var(--red)}
+
+::-webkit-scrollbar{width:3px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">MONK <span>·</span> HIL</div>
+  <div class="hpill">V2</div>
+  <div class="hpill">MISSION SETUP</div>
+</header>
+
+<div class="main">
+
+  <!-- 3D Viewer -->
+  <div class="viewer-section">
+    <div class="viewer-header">
+      <span class="lbl">3D ASSEMBLY VIEWER</span>
+      <span id="viewer-status" class="tag tag-dim">NO MODEL</span>
+    </div>
+    <div id="canvas-container">
+      <canvas id="viewer-canvas"></canvas>
+      <div class="upload-prompt" id="upload-prompt">
+        <svg width="40" height="40" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24" opacity=".3">
+          <path d="M12 2L8 8h3v8h2V8h3L12 2z"/><path d="M4 16v4h16v-4"/>
+        </svg>
+        <p>Upload your rocket assembly STL to preview</p>
+      </div>
+      <div class="viewer-overlay" id="viewer-overlay" style="display:none">
+        <div class="stat-chip"><span class="k">LENGTH</span><span class="v" id="ov-length">—</span></div>
+        <div class="stat-chip"><span class="k">BODY DIA</span><span class="v" id="ov-dia">—</span></div>
+        <div class="stat-chip"><span class="k">Cp</span><span class="v" id="ov-cp">—</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Config Panel -->
+  <div class="config-panel">
+
+    <!-- STL upload -->
+    <div class="section">
+      <div class="section-title">ROCKET ASSEMBLY</div>
+      <div class="upload-zone" id="upload-zone">
+        <input type="file" id="stl-input" accept=".stl">
+        <div class="uz-icon">📦</div>
+        <div class="uz-text" id="uz-text">Drop assembly.stl or click to browse</div>
+        <div class="uz-sub">Inventor · centreline on Z · tail at Z=0 · units mm</div>
+      </div>
+    </div>
+
+    <!-- Aero readout -->
+    <div class="section">
+      <div class="section-title">AERODYNAMICS <span id="aero-tag" class="tag tag-dim" style="margin-left:4px">PENDING</span></div>
+      <div class="aero-grid">
+        <div class="aero-cell"><div class="ak">LENGTH</div><div class="av" id="ar-length">—</div></div>
+        <div class="aero-cell"><div class="ak">BODY DIA</div><div class="av" id="ar-dia">—</div></div>
+        <div class="aero-cell"><div class="ak">Cp FROM NOSE</div><div class="av" id="ar-cp">—</div></div>
+        <div class="aero-cell"><div class="ak">Cd0</div><div class="av" id="ar-cd">—</div></div>
+        <div class="aero-cell"><div class="ak">NOSE LENGTH</div><div class="av" id="ar-nose">—</div></div>
+        <div class="aero-cell"><div class="ak">CoM (from tail)</div><div class="av" id="ar-com">— set mass →</div></div>
+      </div>
+    </div>
+
+    <!-- Rocket params -->
+    <div class="section">
+      <div class="section-title">ROCKET PARAMETERS</div>
+      <div class="param-row">
+        <label>TOTAL MASS</label>
+        <div class="input-unit"><input type="number" id="p-mass" value="0.500" step="0.001"><span class="unit-badge">kg</span></div>
+      </div>
+      <div class="param-row">
+        <label>TVC MOMENT ARM</label>
+        <div class="input-unit"><input type="number" id="p-moment" value="0.150" step="0.001"><span class="unit-badge">m</span></div>
+        <div class="param-hint">Dist. from CoM to gimbal pivot</div>
+      </div>
+      <div class="param-row">
+        <label>DRAG COEFFICIENT (Cd)</label>
+        <input type="number" id="p-cd" value="0.45" step="0.01">
+      </div>
+      <div class="param-row">
+        <label>COM PORT</label>
+        <input type="text" id="p-port" placeholder="COM3  (leave blank = offline)">
+      </div>
+      <div class="param-row">
+        <label>SIM DURATION</label>
+        <div class="input-unit"><input type="number" id="p-duration" value="60" step="1"><span class="unit-badge">s</span></div>
+      </div>
+    </div>
+
+    <!-- Motor -->
+    <div class="section">
+      <div class="section-title">MOTOR</div>
+      <div class="motor-row">
+        <select id="motor-class">
+          <option value="">— class —</option>
+          <option>1/2A</option><option>A</option><option>B</option>
+          <option>C</option><option>D</option><option>E</option>
+          <option value="F" selected>F</option><option>G</option>
+          <option value="custom">Custom</option>
+        </select>
+        <label class="eng-btn">.eng<input type="file" id="eng-input" accept=".eng"></label>
+      </div>
+      <select id="motor-name" style="margin-bottom:7px">
+        <option value="">— select motor —</option>
+      </select>
+      <div class="motor-stats">
+        <div class="motor-stat"><div class="mk">AVG THRUST</div><div class="mv" id="ms-avg">—</div></div>
+        <div class="motor-stat"><div class="mk">MAX THRUST</div><div class="mv" id="ms-max">—</div></div>
+        <div class="motor-stat"><div class="mk">BURN TIME</div><div class="mv" id="ms-burn">—</div></div>
+        <div class="motor-stat"><div class="mk">IMPULSE</div><div class="mv" id="ms-imp">—</div></div>
+      </div>
+      <div class="custom-fields" id="custom-fields">
+        <div class="custom-row" style="margin-top:8px"><label>MOTOR NAME</label><input type="text" id="c-name" placeholder="MyMotor"></div>
+        <div class="custom-row"><label>AVG THRUST (N)</label><input type="number" id="c-avg" value="15" step="0.1"></div>
+        <div class="custom-row"><label>BURN TIME (s)</label><input type="number" id="c-burn" value="3.0" step="0.1"></div>
+        <div class="custom-row"><label>TOTAL IMPULSE (Ns)</label><input type="number" id="c-impulse" placeholder="auto"></div>
+        <div class="custom-row">
+          <label>THRUST CURVE (optional)</label>
+          <table class="tc-table"><thead><tr><th>TIME s</th><th>THRUST N</th><th></th></tr></thead><tbody id="tc-body"></tbody></table>
+          <button class="add-row-btn" id="tc-add">+ add point</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Launch -->
+    <div class="launch-section">
+      <button class="launch-btn" id="launch-btn">▶ LAUNCH SIMULATION</button>
+      <div class="launch-status" id="launch-status"></div>
+    </div>
+
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+// ── Estes DB ──────────────────────────────────────────────────────────────────
+const ESTES_DB = {
+  "1/2A":[{name:"1/2A3-2T",avg:1.9,max:5.3,burn:0.82,impulse:1.56}],
+  "A":[{name:"A8-3",avg:8.0,max:14.1,burn:0.50,impulse:2.50},{name:"A8-5",avg:8.0,max:14.1,burn:0.50,impulse:2.50}],
+  "B":[{name:"B4-2",avg:4.2,max:8.8,burn:1.03,impulse:4.38},{name:"B4-4",avg:4.2,max:8.8,burn:1.03,impulse:4.38},{name:"B6-2",avg:5.0,max:9.7,burn:0.90,impulse:5.00},{name:"B6-4",avg:5.0,max:9.7,burn:0.90,impulse:5.00},{name:"B6-6",avg:5.0,max:9.7,burn:0.90,impulse:5.00}],
+  "C":[{name:"C5-3",avg:10.8,max:19.4,burn:0.90,impulse:10.00},{name:"C5-5",avg:10.8,max:19.4,burn:0.90,impulse:10.00},{name:"C6-3",avg:10.0,max:14.1,burn:1.70,impulse:10.00},{name:"C6-5",avg:10.0,max:14.1,burn:1.70,impulse:10.00},{name:"C6-7",avg:10.0,max:14.1,burn:1.70,impulse:10.00}],
+  "D":[{name:"D12-3",avg:12.2,max:29.7,burn:1.60,impulse:16.85},{name:"D12-5",avg:12.2,max:29.7,burn:1.60,impulse:16.85},{name:"D12-7",avg:12.2,max:29.7,burn:1.60,impulse:16.85}],
+  "E":[{name:"E9-4",avg:14.0,max:19.4,burn:3.00,impulse:28.00},{name:"E9-6",avg:14.0,max:19.4,burn:3.00,impulse:28.00},{name:"E9-8",avg:14.0,max:19.4,burn:3.00,impulse:28.00},{name:"E12-4",avg:12.0,max:19.0,burn:2.90,impulse:28.05},{name:"E12-6",avg:12.0,max:19.0,burn:2.90,impulse:28.05}],
+  "F":[{name:"F15-0",avg:15.4,max:19.5,burn:3.60,impulse:29.70},{name:"F15-4",avg:15.4,max:19.5,burn:3.60,impulse:29.70},{name:"F15-6",avg:15.4,max:19.5,burn:3.60,impulse:29.70}],
+  "G":[{name:"G40-4",avg:40.0,max:68.0,burn:1.70,impulse:40.00},{name:"G40-7",avg:40.0,max:68.0,burn:1.70,impulse:40.00},{name:"G80-4",avg:80.0,max:107.0,burn:0.90,impulse:40.00},{name:"G80-7",avg:80.0,max:107.0,burn:0.90,impulse:40.00}],
+};
+
+// ── Three.js viewer ───────────────────────────────────────────────────────────
+const canvas    = document.getElementById('viewer-canvas');
+const container = document.getElementById('canvas-container');
+
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+renderer.setClearColor(0x090c10, 1);
+renderer.setPixelRatio(window.devicePixelRatio);
+
+const scene  = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(45, 1, 0.0001, 1000);
+
+scene.add(new THREE.AmbientLight(0x22d3ee, 0.15));
+const dl = new THREE.DirectionalLight(0xffffff, 0.3);
+dl.position.set(1, 2, 1); scene.add(dl);
+
+// Grid (placed at Y=0 = rocket base)
+const grid = new THREE.GridHelper(3, 24, 0x1e2d3d, 0x1e2d3d);
+scene.add(grid);
+
+let rocketGroup = null;
+let autoRotate  = true;
+let isDragging  = false, prevX = 0, prevY = 0;
+let rotX = -0.15, rotY = 0.4, camDist = 2.0;
+let camTarget   = new THREE.Vector3(0, 0, 0);
+
+canvas.addEventListener('mousedown', e => { isDragging = true; prevX = e.clientX; prevY = e.clientY; autoRotate = false; });
+window.addEventListener('mouseup',   () => isDragging = false);
+window.addEventListener('mousemove', e => {
+  if (!isDragging) return;
+  rotY += (e.clientX - prevX) * 0.008;
+  rotX += (e.clientY - prevY) * 0.008;
+  prevX = e.clientX; prevY = e.clientY;
+});
+canvas.addEventListener('wheel', e => { camDist = Math.max(0.3, Math.min(10, camDist + e.deltaY * 0.003)); });
+
+function updateCamera() {
+  camera.position.x = camTarget.x + Math.sin(rotY) * Math.cos(rotX) * camDist;
+  camera.position.y = camTarget.y + Math.sin(rotX) * camDist;
+  camera.position.z = camTarget.z + Math.cos(rotY) * Math.cos(rotX) * camDist;
+  camera.lookAt(camTarget);
+}
+
+function resizeRenderer() {
+  // Use offsetWidth/offsetHeight which are more reliable across monitor changes
+  const w = container.offsetWidth, h = container.offsetHeight;
+  if (w < 10 || h < 10) return;
+  renderer.setSize(w, h, false);
+  renderer.setPixelRatio(window.devicePixelRatio);
+  camera.aspect = w / h;
+  camera.updateProjectionMatrix();
+}
+
+let resizeTimer = null;
+function debouncedResize() {
+  clearTimeout(resizeTimer);
+  // Delay lets the browser finish repainting after monitor drag
+  resizeTimer = setTimeout(resizeRenderer, 120);
+}
+
+resizeRenderer();
+new ResizeObserver(debouncedResize).observe(container);
+window.addEventListener('resize', debouncedResize);
+
+function animate() {
+  requestAnimationFrame(animate);
+  if (rocketGroup && autoRotate) rocketGroup.rotation.y += 0.004;
+  updateCamera();
+  renderer.render(scene, camera);
+}
+animate();
+
+// STL parser
+function parseSTL(buffer) {
+  const dv  = new DataView(buffer);
+  const n   = dv.getUint32(80, true);
+  if (buffer.byteLength === 84 + n * 50) {
+    const pos = new Float32Array(n * 9);
+    for (let i = 0; i < n; i++) {
+      const off = 84 + i * 50 + 12;
+      for (let j = 0; j < 9; j++) pos[i*9+j] = dv.getFloat32(off + j*4, true);
+    }
+    const g = new THREE.BufferGeometry();
+    g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+    g.computeVertexNormals(); return g;
+  }
+  const txt = new TextDecoder().decode(buffer);
+  const verts = [], re = /vertex\s+([\d.eE+\-]+)\s+([\d.eE+\-]+)\s+([\d.eE+\-]+)/g; let m;
+  while ((m = re.exec(txt))) verts.push(+m[1], +m[2], +m[3]);
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.BufferAttribute(new Float32Array(verts), 3));
+  g.computeVertexNormals(); return g;
+}
+
+function loadSTLIntoViewer(buffer) {
+  const geo = parseSTL(buffer);
+  geo.computeBoundingBox();
+  const bb  = geo.boundingBox;
+  const sz  = new THREE.Vector3(); bb.getSize(sz);
+  const ctr = new THREE.Vector3(); bb.getCenter(ctr);
+
+  // Scale so longest dimension = 1.5 units
+  const scale = 1.5 / Math.max(sz.x, sz.y, sz.z);
+
+  // Centre the geometry and rotate so longest axis points up (+Y)
+  geo.translate(-ctr.x, -ctr.y, -ctr.z);
+  // Rocket axis is Z (tail=0, nose=top), rotate -90° around X so it points up in Three.js
+  geo.applyMatrix4(new THREE.Matrix4().makeRotationX(-Math.PI / 2));
+  geo.scale(scale, scale, scale);
+
+  // Recompute after transforms
+  geo.computeBoundingBox();
+  const bb2  = geo.boundingBox;
+  const sz2  = new THREE.Vector3(); bb2.getSize(sz2);
+  // Translate so base sits on grid (Y=0)
+  geo.translate(0, -bb2.min.y, 0);
+
+  // Camera target = mid-height of rocket
+  camTarget.set(0, sz2.y * 0.5, 0);
+  // Camera distance = 1.8× rocket height
+  camDist = sz2.y * 1.8;
+
+  if (rocketGroup) scene.remove(rocketGroup);
+  rocketGroup = new THREE.Group();
+
+  rocketGroup.add(new THREE.Mesh(geo,
+    new THREE.MeshPhongMaterial({ color: 0x0e7490, transparent: true, opacity: 0.08, side: THREE.DoubleSide })));
+  rocketGroup.add(new THREE.LineSegments(
+    new THREE.WireframeGeometry(geo),
+    new THREE.LineBasicMaterial({ color: 0x22d3ee, transparent: true, opacity: 0.6 })));
+
+  scene.add(rocketGroup);
+
+  document.getElementById('upload-prompt').style.display   = 'none';
+  document.getElementById('viewer-overlay').style.display  = 'flex';
+  document.getElementById('viewer-status').textContent     = 'MODEL LOADED';
+  document.getElementById('viewer-status').className       = 'tag tag-ok';
+}
+
+// STL upload
+let aeroData = null;
+
+document.getElementById('stl-input').addEventListener('change', async e => {
+  const file = e.target.files[0]; if (!file) return;
+  document.getElementById('uz-text').textContent = file.name;
+  document.getElementById('upload-zone').classList.add('has-file');
+
+  const buf = await file.arrayBuffer();
+  loadSTLIntoViewer(buf.slice(0));
+
+  document.getElementById('aero-tag').textContent = 'PROCESSING...';
+  document.getElementById('aero-tag').className   = 'tag tag-warn';
+
+  try {
+    const fd = new FormData();
+    fd.append('file', file);
+    await fetch('/upload/stl/assembly', { method: 'POST', body: fd });
+
+    const ar = await fetch('/aero/analyze', { method: 'POST' });
+    if (!ar.ok) throw new Error(await ar.text());
+    aeroData = await ar.json();
+
+    const mm = v => (v * 1000).toFixed(1) + ' mm';
+    document.getElementById('ar-length').textContent = mm(aeroData.rocket_length);
+    document.getElementById('ar-dia').textContent    = mm(aeroData.rocket_diameter);
+    document.getElementById('ar-cp').textContent     = mm(aeroData.cp_from_nose);
+    document.getElementById('ar-cd').textContent     = aeroData.cd0.toFixed(4);
+    document.getElementById('ar-nose').textContent   = mm(aeroData.nose_length);
+    document.getElementById('ov-length').textContent = mm(aeroData.rocket_length);
+    document.getElementById('ov-dia').textContent    = mm(aeroData.rocket_diameter);
+    document.getElementById('ov-cp').textContent     = mm(aeroData.cp_from_nose);
+    document.getElementById('p-cd').value = aeroData.cd0.toFixed(4);
+
+    document.getElementById('aero-tag').textContent = 'READY';
+    document.getElementById('aero-tag').className   = 'tag tag-ok';
+  } catch(err) {
+    document.getElementById('aero-tag').textContent = 'AERO ERROR';
+    document.getElementById('aero-tag').className   = 'tag tag-warn';
+    console.error(err);
+  }
+});
+
+// Drag and drop
+const uz = document.getElementById('upload-zone');
+uz.addEventListener('dragover', e => { e.preventDefault(); uz.classList.add('drag-over'); });
+uz.addEventListener('dragleave', () => uz.classList.remove('drag-over'));
+uz.addEventListener('drop', e => {
+  e.preventDefault(); uz.classList.remove('drag-over');
+  const f = e.dataTransfer.files[0];
+  if (f && f.name.endsWith('.stl')) {
+    document.getElementById('stl-input').files = e.dataTransfer.files;
+    document.getElementById('stl-input').dispatchEvent(new Event('change'));
+  }
+});
+
+// ── Motor selector ────────────────────────────────────────────────────────────
+const motorClass   = document.getElementById('motor-class');
+const motorName    = document.getElementById('motor-name');
+const customFields = document.getElementById('custom-fields');
+
+function populateMotorDropdown(cls) {
+  motorName.innerHTML = '<option value="">— select motor —</option>';
+  const motors = ESTES_DB[cls] || [];
+  motors.forEach(m => {
+    const o = document.createElement('option');
+    o.value = m.name; o.textContent = m.name;
+    motorName.appendChild(o);
+  });
+  if (motors.length > 0) {
+    motorName.value = motors[0].name;
+    showMotorStats(motors[0]);
+  }
+}
+
+function showMotorStats(m) {
+  if (!m) return;
+  document.getElementById('ms-avg').textContent  = m.avg.toFixed(1) + ' N';
+  document.getElementById('ms-max').textContent  = m.max.toFixed(1) + ' N';
+  document.getElementById('ms-burn').textContent = m.burn.toFixed(2) + ' s';
+  document.getElementById('ms-imp').textContent  = m.impulse.toFixed(2) + ' Ns';
+}
+
+motorClass.addEventListener('change', () => {
+  const cls = motorClass.value;
+  if (cls === 'custom') {
+    customFields.classList.add('visible');
+    motorName.innerHTML = '<option value="custom">Custom motor</option>';
+    motorName.value = 'custom';
+    return;
+  }
+  customFields.classList.remove('visible');
+  populateMotorDropdown(cls);
+});
+
+motorName.addEventListener('change', () => {
+  const cls = motorClass.value;
+  const motors = ESTES_DB[cls] || [];
+  showMotorStats(motors.find(x => x.name === motorName.value));
+});
+
+// Init with F class and first motor selected
+motorClass.value = 'F';
+populateMotorDropdown('F');
+
+// .eng upload
+document.getElementById('eng-input').addEventListener('change', async e => {
+  const file = e.target.files[0]; if (!file) return;
+  const fd = new FormData(); fd.append('file', file);
+  try {
+    const r = await fetch('/upload/eng', { method: 'POST', body: fd });
+    const d = await r.json();
+    motorClass.value = 'custom';
+    customFields.classList.add('visible');
+    motorName.innerHTML = '<option value="custom">Custom (.eng)</option>';
+    motorName.value = 'custom';
+    document.getElementById('c-name').value    = d.name;
+    document.getElementById('c-avg').value     = d.avg_thrust_n.toFixed(1);
+    document.getElementById('c-burn').value    = d.burn_time_s.toFixed(2);
+    document.getElementById('c-impulse').value = d.total_impulse_ns.toFixed(2);
+    showMotorStats({ avg: d.avg_thrust_n, max: d.max_thrust_n, burn: d.burn_time_s, impulse: d.total_impulse_ns });
+  } catch(e) { console.error('.eng upload failed', e); }
+});
+
+// Thrust curve table
+document.getElementById('tc-add').addEventListener('click', () => {
+  const tr = document.createElement('tr');
+  tr.innerHTML = `<td><input type="number" step="0.01" placeholder="0.0" style="font-size:11px;padding:3px 5px"></td>
+    <td><input type="number" step="0.1" placeholder="0.0" style="font-size:11px;padding:3px 5px"></td>
+    <td><button onclick="this.closest('tr').remove()" style="background:none;border:none;color:var(--dim);cursor:pointer">✕</button></td>`;
+  document.getElementById('tc-body').appendChild(tr);
+});
+
+['c-avg','c-burn','c-impulse'].forEach(id => document.getElementById(id).addEventListener('input', () => {
+  const avg = parseFloat(document.getElementById('c-avg').value) || 0;
+  const burn = parseFloat(document.getElementById('c-burn').value) || 0;
+  const imp = parseFloat(document.getElementById('c-impulse').value) || avg * burn;
+  showMotorStats({ avg, max: avg, burn, impulse: imp });
+}));
+
+// ── Launch ────────────────────────────────────────────────────────────────────
+document.getElementById('launch-btn').addEventListener('click', async () => {
+  const btn    = document.getElementById('launch-btn');
+  const status = document.getElementById('launch-status');
+  status.className = 'launch-status';
+
+  const cls = motorClass.value;
+  let motorParams;
+
+  if (cls === 'custom' || motorName.value === 'custom') {
+    const tcRows = [...document.getElementById('tc-body').querySelectorAll('tr')];
+    const tc = tcRows.map(r => {
+      const ins = r.querySelectorAll('input');
+      return [parseFloat(ins[0].value), parseFloat(ins[1].value)];
+    }).filter(p => !isNaN(p[0]) && !isNaN(p[1]));
+    motorParams = {
+      type:        'custom',
+      name:        document.getElementById('c-name').value || 'Custom',
+      avg_thrust:  parseFloat(document.getElementById('c-avg').value)  || 15,
+      burn_time:   parseFloat(document.getElementById('c-burn').value) || 3,
+      impulse:     parseFloat(document.getElementById('c-impulse').value) || null,
+      thrust_curve: tc.length >= 2 ? tc : null,
+    };
+  } else {
+    const name = motorName.value || 'F15-0';
+    motorParams = { type: 'estes', name };
+  }
+
+  const mass = parseFloat(document.getElementById('p-mass').value);
+  if (isNaN(mass) || mass <= 0) {
+    status.textContent = 'Error: enter a valid mass';
+    status.className = 'launch-status err';
+    return;
+  }
+
+  const params = {
+    mass,
+    moment_arm: parseFloat(document.getElementById('p-moment').value)   || 0.15,
+    cd:         parseFloat(document.getElementById('p-cd').value)        || 0.45,
+    com_port:   document.getElementById('p-port').value.trim(),
+    duration:   parseFloat(document.getElementById('p-duration').value)  || 60,
+    motor:      motorParams,
+    aero:       aeroData,
+  };
+
+  btn.disabled = true;
+  status.textContent = 'Sending launch command...';
+
+  try {
+    const res = await fetch('/launch', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(params),
+    });
+    if (!res.ok) {
+      const msg = await res.text();
+      throw new Error(msg);
+    }
+    status.textContent = 'Launched — opening flight dashboard...';
+    setTimeout(() => window.location.href = '/flight', 600);
+  } catch(err) {
+    status.textContent = 'Launch failed: ' + err.message;
+    status.className = 'launch-status err';
+    btn.disabled = false;
+  }
+});
+</script>
+</body>
+</html>
