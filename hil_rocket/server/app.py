@@ -33,10 +33,6 @@ async def root():
 async def flight():
     return FileResponse(FRONTEND / "flight.html")
 
-@app.get("/windtunnel")
-async def windtunnel():
-    return FileResponse(FRONTEND / "windtunnel.html")
-
 
 # ── Aero analysis ─────────────────────────────────────────────────────────────
 
@@ -44,14 +40,11 @@ async def windtunnel():
 async def aero_analyze():
     """
     Run Barrowman + mass props on the uploaded assembly STL.
-    Returns Cp, Cd, geometry summary, Cd curve, the actual radius
-    profile extracted from the STL, and a solved ring-source potential
-    flow field (validated axisymmetric panel method — see
-    aero/flow_field.py for methodology and known limitations).
+    Returns Cp, Cd, geometry summary, Cd curve, and the actual radius
+    profile extracted from the STL.
     """
     from aero.mesh_import import load_assembly, get_rocket_silhouette
     from aero.barrowman import run_barrowman
-    from aero.flow_field import solve_ring_sources
 
     stl_path = Path("uploads/stl/assembly.stl")
     if not stl_path.exists():
@@ -71,25 +64,7 @@ async def aero_analyze():
         for z, r in silhouette
     ]
 
-    # Solve the ring-source panel method against the REAL profile
-    try:
-        flow_solution = solve_ring_sources(
-            silhouette[:, 0], silhouette[:, 1],
-            n_rings=90, m_points=32,
-        )
-        flow_field_data = {
-            "z_rings": [round(float(z), 5) for z in flow_solution.z_rings],
-            "r_rings": [round(float(r), 5) for r in flow_solution.r_rings],
-            "q_unit":  [round(float(q), 8) for q in flow_solution.Q_unit],
-            "m_points": flow_solution.M,
-            "solve_quality": flow_solution.summary(),
-        }
-        logger.info(f"Flow field solved: {flow_solution.summary()}")
-    except Exception as e:
-        logger.error(f"Ring-source solve failed: {e}")
-        flow_field_data = None
-
-    # Store in shared state so flight dashboard and wind tunnel can access it
+    # Store in shared state so the flight dashboard can access it
     sim_state.update(
         cp_location    = result.cp_from_nose,
         cg_location    = 0.0,   # updated after launch with mass from params
@@ -99,7 +74,6 @@ async def aero_analyze():
         rocket_profile = profile,
         stl_uploaded   = True,
         stl_paths      = {"assembly": str(stl_path)},
-        flow_field_data= flow_field_data,
     )
 
     return {
@@ -113,13 +87,12 @@ async def aero_analyze():
         "cd_curve":       result.cd_curve,
         "profile":        profile,
         "rocket_profile": profile,
-        "flow_field":     flow_field_data,
     }
 
 
 @app.get("/aero")
 async def aero_get():
-    """Return current aero state for wind tunnel. Keys match /aero/analyze exactly."""
+    """Return current aero state for the flight dashboard. Keys match /aero/analyze exactly."""
     return {
         "cp_from_nose":   sim_state.cp_location,
         "cg":             sim_state.cg_location,
@@ -129,7 +102,6 @@ async def aero_get():
         "rocket_diameter": sim_state.rocket_diameter,
         "rocket_profile": sim_state.rocket_profile,
         "profile":        sim_state.rocket_profile,
-        "flow_field":     sim_state.flow_field_data,
         "stl_uploaded":   sim_state.stl_uploaded,
     }
 

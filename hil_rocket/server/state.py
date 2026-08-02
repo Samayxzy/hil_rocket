@@ -65,11 +65,10 @@ class SimState:
         self.cp_location          = 0.0   # m from nose
         self.cg_location          = 0.0   # m from nose
         self.stability_margin     = 0.0   # calibers
-        self.cd_curve             = []    # list of {aoa, cd} for wind tunnel
+        self.cd_curve             = []    # list of {aoa, cd}
         self.rocket_length        = 0.0   # m
         self.rocket_diameter      = 0.0   # m
         self.rocket_profile       = []    # list of {z, r} — actual STL silhouette (tail=0 -> nose)
-        self.flow_field_data      = None  # solved ring-source data (see aero/flow_field.py)
         self.stl_uploaded         = False
         self.stl_paths            = {}    # {"nosecone": path, "body": path, ...}
 

@@ -82,14 +82,13 @@ full-rocket assembly STL exported from CAD: centerline on Z, tail at Z=0, nose i
 2. `barrowman.run_barrowman()` — re-derives nosecone/body/fin geometry from that profile (nose shape
    classified by curve fit, fins detected by radius spikes above body radius) and runs the classic
    Barrowman equations for Cp location, CNα, and a Cd0 estimate.
-3. `flow_field.solve_ring_sources()` — a validated axisymmetric ring-source panel method (read the module
-   docstring for why this replaced both the naive slender-body shortcut and an axial line-source
-   approach, and its known ~10-25% error near a sharp nose tip) used to drive the wind-tunnel
-   visualization.
 
-Results are cached into `sim_state` (`cp_location`, `cd_curve`, `rocket_profile`, `flow_field_data`, etc.)
-so both the flight dashboard and the wind-tunnel page can read them via `GET /aero` without re-running
-the analysis.
+Results are cached into `sim_state` (`cp_location`, `cd_curve`, `rocket_profile`, etc.) so the flight
+dashboard can read them via `GET /aero` without re-running the analysis.
+
+**Note:** the wind-tunnel visualization page and its ring-source flow-field solver (`aero/flow_field.py`)
+have been removed. Only the Barrowman pipeline (Cp/Cd/geometry) remains — it still feeds the launch
+screen's aero readout and the stability-margin display on the flight dashboard.
 
 **Note:** `aero/mass_props.py` (`compute_mass_props`) expects a multi-component assembly API
 (`assembly.components`, a `ComponentMesh` type) that no longer exists on `RocketAssembly` in the current
@@ -111,13 +110,13 @@ packets sim→board, `$A,...` actuator packets board→sim.
   `POST /upload/eng` (in `upload.py`), `POST /pause` / `POST /resume`, `GET /history` (flight scrubber),
   and `/ws` (WebSocket telemetry stream).
 - `state.py` — `sim_state`, the single shared `SimState` singleton described above.
-- `ws_manager.py` — tracks connected WebSocket clients (dashboard + wind-tunnel window can both be
-  connected at once) and broadcasts JSON snapshots, silently dropping dead connections.
+- `ws_manager.py` — tracks connected WebSocket clients and broadcasts JSON snapshots, silently dropping
+  dead connections.
 - `upload.py` — STL/`.eng` file upload endpoints; files are saved to fixed paths (`uploads/stl/assembly.stl`,
   `uploads/eng/custom.eng`), overwriting any previous upload.
-- `frontend/` — three static HTML pages, no build step: `launch.html` (rocket/motor/COM-port config),
-  `flight.html` (live 3D flight dashboard, Three.js via CDN — 1 Three.js unit = 1 real metre), and
-  `windtunnel.html` (aero visualization using the solved flow field).
+- `frontend/` — two static HTML pages, no build step: `launch.html` (rocket/motor/COM-port config) and
+  `flight.html` (live mission-control-style flight dashboard: chase-cam 3D viewer, telemetry panels,
+  charts, event timeline — Three.js via CDN, 1 Three.js unit = 1 real metre).
 
 ### Note on `config.py`
 
@@ -134,8 +133,7 @@ Don't assume changes to `config.py` affect a running simulation.
   new values through, since it differs between `physics.py` (body Z=nose, world Z=up) and
   `mesh_import.py`/`barrowman.py` (profile Z: tail=0 in the raw STL, but Barrowman internally flips to
   nose-first).
-- Several modules (`tvc.py`, `physics.py`, `flow_field.py`) have long docstrings explaining *why* a
-  particular simplification or numerical approach was chosen, including known limitations that were
-  deliberately left as-is (e.g. no TVC authority after burnout, ring-source error near the nose tip,
-  accelerometer approximated along body +Z at low AoA). Read those before "fixing" what looks like an
-  oversight.
+- Several modules (`tvc.py`, `physics.py`) have long docstrings explaining *why* a particular
+  simplification or numerical approach was chosen, including known limitations that were deliberately
+  left as-is (e.g. no TVC authority after burnout, accelerometer approximated along body +Z at low AoA).
+  Read those before "fixing" what looks like an oversight.

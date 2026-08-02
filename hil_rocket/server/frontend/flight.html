@@ -29,6 +29,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--mono);font-size:12
 #hdr{display:flex;align-items:center;gap:10px;padding:0 12px;height:44px;background:var(--bg-p);border-bottom:1px solid var(--border);flex-shrink:0;z-index:10}
 .logo{font-size:14px;font-weight:700;letter-spacing:.15em;color:var(--teal);margin-right:4px}
 .logo span{color:var(--dim);font-weight:400}
+.logo-sub{font-size:8px;letter-spacing:.2em;color:var(--dim);margin-right:8px;border-left:1px solid var(--border);padding-left:8px}
 #clock{font-size:20px;font-weight:700;letter-spacing:.05em;color:var(--text);min-width:110px}
 .pill{font-size:9px;padding:2px 7px;border-radius:3px;letter-spacing:.1em;border:1px solid var(--border);color:var(--dim)}
 .pill.on{background:rgba(34,211,238,.12);border-color:var(--teal-d);color:var(--teal)}
@@ -39,8 +40,6 @@ body{background:var(--bg);color:var(--text);font-family:var(--mono);font-size:12
 .hm{display:flex;flex-direction:column;align-items:flex-end}
 .hm .hk{font-size:8px;color:var(--dim);letter-spacing:.1em}
 .hm .hv{font-size:13px;color:var(--teal)}
-#btn-wt{margin-left:8px;background:var(--bg-c);border:1px solid var(--border);color:var(--mid);font-family:var(--mono);font-size:10px;padding:4px 10px;border-radius:4px;cursor:pointer;letter-spacing:.08em}
-#btn-wt:hover{border-color:var(--border-h);color:var(--text)}
 
 /* ── Scrubber ── */
 #scrubber-bar{display:flex;align-items:center;gap:8px;padding:0 12px;height:32px;background:var(--bg-p);border-bottom:1px solid var(--border);flex-shrink:0}
@@ -50,24 +49,44 @@ body{background:var(--bg);color:var(--text);font-family:var(--mono);font-size:12
 #scrub-time{font-size:10px;color:var(--dim);min-width:70px;text-align:right}
 #pill-paused{display:none}
 
+/* ── Mission timeline ── */
+#timeline-bar{display:flex;align-items:center;gap:0;padding:0 16px;height:28px;background:var(--bg-p);border-bottom:1px solid var(--border);flex-shrink:0;overflow-x:auto}
+.tl-chip{display:flex;align-items:center;gap:5px;font-size:9px;letter-spacing:.1em;color:var(--dim);white-space:nowrap;padding:0 2px;transition:color .3s}
+.tl-chip .tl-dot{width:6px;height:6px;border-radius:50%;background:var(--border-h);flex-shrink:0;transition:background .3s,box-shadow .3s}
+.tl-chip.active{color:var(--teal)}
+.tl-chip.active .tl-dot{background:var(--teal);box-shadow:0 0 6px var(--teal)}
+.tl-chip.done{color:var(--mid)}
+.tl-chip.done .tl-dot{background:var(--green)}
+.tl-chip .tl-t{color:var(--dim);font-size:8px;margin-left:1px;min-width:52px}
+.tl-line{flex:1;height:1px;background:var(--border);min-width:16px;margin:0 4px;transition:background .3s}
+.tl-line.done{background:var(--green)}
+
 /* ── Main area ── */
 #main{display:flex;flex:1;overflow:hidden}
 
 /* ── 3D Viewer ── */
-#viewer{position:relative;width:44%;flex-shrink:0;border-right:1px solid var(--border);background:var(--bg)}
+#viewer{position:relative;width:46%;flex-shrink:0;border-right:1px solid var(--border);background:var(--bg)}
 #viewer canvas{width:100%;height:100%;display:block}
 .v-badge{position:absolute;font-size:9px;padding:2px 7px;border-radius:3px;letter-spacing:.1em;pointer-events:none}
 #badge-phase{top:10px;left:10px;background:rgba(9,12,16,.85);border:1px solid var(--border-h);color:var(--teal)}
 #badge-motor{top:10px;right:10px;background:rgba(9,12,16,.85);border:1px solid var(--border);color:var(--dim)}
 #trail-legend{position:absolute;bottom:10px;right:10px;background:rgba(9,12,16,.85);border:1px solid var(--border);border-radius:4px;padding:6px 10px;font-size:9px;color:var(--dim)}
 #trail-legend .tl-row{display:flex;align-items:center;gap:5px;margin-bottom:2px}
-#trail-legend .tl-line{width:16px;height:2px}
+#trail-legend .tl-row:last-child{margin-bottom:0}
+#trail-legend .tl-line-sw{width:16px;height:2px}
+#trail-legend .tl-ring-sw{width:12px;height:12px;border-radius:50%;border:1.5px solid var(--dim)}
+
+/* Ground-track minimap */
+#groundtrack-wrap{position:absolute;bottom:10px;left:10px;background:rgba(9,12,16,.85);border:1px solid var(--border);border-radius:4px;padding:5px}
+#groundtrack-label{font-size:8px;color:var(--dim);letter-spacing:.06em;margin-bottom:3px;text-align:center}
+#groundtrack{display:block}
 
 /* ── Data panels ── */
-#panels{flex:1;display:grid;grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr;overflow:hidden}
-.panel{border-right:1px solid var(--border);border-bottom:1px solid var(--border);overflow-y:auto;padding:8px}
+#panels{flex:1;display:grid;grid-template-columns:1fr 1fr;grid-template-rows:repeat(3,1fr);overflow:hidden}
+.panel{border-right:1px solid var(--border);border-bottom:1px solid var(--border);overflow-y:auto;padding:8px;display:flex;flex-direction:column}
 .panel:nth-child(2n){border-right:none}
-.panel-title{font-size:9px;letter-spacing:.12em;color:var(--dim);margin-bottom:8px;padding-bottom:5px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:6px}
+.panel:nth-last-child(-n+2){border-bottom:none}
+.panel-title{font-size:9px;letter-spacing:.12em;color:var(--dim);margin-bottom:8px;padding-bottom:5px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:6px;flex-shrink:0}
 .panel-title .pt-accent{color:var(--teal)}
 
 /* Data rows */
@@ -109,6 +128,17 @@ body{background:var(--bg);color:var(--text);font-family:var(--mono);font-size:12
 #hw-offline-msg .off-title{font-size:11px;color:var(--mid);letter-spacing:.1em}
 #hw-offline-msg .off-sub{font-size:9px;line-height:1.6}
 
+/* Mission event log */
+#event-log{flex:1;overflow-y:auto;min-height:0}
+.ev-row{display:flex;justify-content:space-between;gap:8px;padding:4px 0;border-bottom:1px solid var(--border)}
+.ev-row:last-child{border-bottom:none}
+.ev-t{font-size:9px;color:var(--dim);flex-shrink:0}
+.ev-label{font-size:10px;color:var(--teal);text-align:right}
+.ev-label.ok{color:var(--green)}
+.ev-label.warn{color:var(--orange)}
+.ev-label.red{color:var(--red)}
+#event-log-empty{color:var(--dim);font-size:10px;text-align:center;padding-top:12px}
+
 /* ── Charts ── */
 #charts{height:185px;flex-shrink:0;border-top:1px solid var(--border);display:flex;background:var(--bg-p)}
 .chart-wrap{flex:1;border-right:1px solid var(--border);position:relative;overflow:hidden}
@@ -141,6 +171,7 @@ canvas.chart-canvas{width:100%;height:100%;display:block}
 <!-- Header -->
 <div id="hdr">
   <div class="logo">MONK <span>·</span> HIL</div>
+  <div class="logo-sub">MISSION CONTROL</div>
   <div id="clock">T+00:00.0</div>
   <div id="pill-sim" class="pill on">SIM ACTIVE</div>
   <div id="pill-hw"  class="pill">HW OFFLINE</div>
@@ -154,7 +185,6 @@ canvas.chart-canvas{width:100%;height:100%;display:block}
     <div class="hm"><span class="hk">G-LOAD</span><span class="hv" id="hm-g">1.00</span></div>
     <div class="hm"><span class="hk">Hz</span><span class="hv" id="hm-hz">0</span></div>
   </div>
-  <button id="btn-wt" onclick="window.open('/windtunnel','wt','width=680,height=960')">⬡ WIND TUNNEL</button>
 </div>
 
 <!-- Scrubber -->
@@ -162,7 +192,19 @@ canvas.chart-canvas{width:100%;height:100%;display:block}
   <button id="btn-live" class="dead" onclick="goLive()">● LIVE</button>
   <input type="range" id="scrub" min="0" max="1000" value="1000" step="1">
   <span id="scrub-time">T+00:00.0</span>
-  <div id="pill-paused" class="pill warn" style="display:none">PAUSED</div>
+</div>
+
+<!-- Mission timeline -->
+<div id="timeline-bar">
+  <div class="tl-chip active" id="tl-pad"><span class="tl-dot"></span>PAD<span class="tl-t"></span></div>
+  <div class="tl-line" id="tl-line-1"></div>
+  <div class="tl-chip" id="tl-liftoff"><span class="tl-dot"></span>LIFTOFF<span class="tl-t"></span></div>
+  <div class="tl-line" id="tl-line-2"></div>
+  <div class="tl-chip" id="tl-burnout"><span class="tl-dot"></span>BURNOUT<span class="tl-t"></span></div>
+  <div class="tl-line" id="tl-line-3"></div>
+  <div class="tl-chip" id="tl-apogee"><span class="tl-dot"></span>APOGEE<span class="tl-t"></span></div>
+  <div class="tl-line" id="tl-line-4"></div>
+  <div class="tl-chip" id="tl-touchdown"><span class="tl-dot"></span>TOUCHDOWN<span class="tl-t"></span></div>
 </div>
 
 <!-- Main area -->
@@ -173,13 +215,17 @@ canvas.chart-canvas{width:100%;height:100%;display:block}
     <canvas id="three-canvas"></canvas>
     <div class="v-badge" id="badge-phase">IDLE</div>
     <div class="v-badge" id="badge-motor">—</div>
+    <div id="groundtrack-wrap">
+      <div id="groundtrack-label">GND TRACK</div>
+      <canvas id="groundtrack" width="110" height="110"></canvas>
+    </div>
     <div id="trail-legend">
-      <div class="tl-row"><div class="tl-line" style="background:var(--teal)"></div>SIM</div>
-      <div class="tl-row"><div class="tl-line" style="background:var(--orange)"></div>HW</div>
+      <div class="tl-row"><div class="tl-line-sw" style="background:var(--teal)"></div>SIM TRAJECTORY</div>
+      <div class="tl-row"><div class="tl-ring-sw"></div>RINGS = 50m ALT</div>
     </div>
   </div>
 
-  <!-- Data panels 2x2 -->
+  <!-- Data panels 2x3 -->
   <div id="panels">
 
     <!-- Panel 1: SIM TRUTH — ATTITUDE -->
@@ -309,6 +355,35 @@ canvas.chart-canvas{width:100%;height:100%;display:block}
       </div>
     </div>
 
+    <!-- Panel 5: STABILITY & TRAJECTORY -->
+    <div class="panel">
+      <div class="panel-title"><span class="pt-accent">◈</span> STABILITY · TRAJECTORY</div>
+      <div class="d-section">
+        <div class="d-label">AERODYNAMIC GEOMETRY · FROM STL ANALYSIS</div>
+        <div class="d-row"><span class="dk">Cp from nose</span><span class="dv" id="st-cp">—</span></div>
+        <div class="d-row"><span class="dk">Rocket length</span><span class="dv" id="st-length">—</span></div>
+        <div class="d-row"><span class="dk">Body diameter</span><span class="dv" id="st-dia">—</span></div>
+      </div>
+      <div class="d-section">
+        <div class="d-label">GROUND TRACK</div>
+        <div class="d-row"><span class="dk">Downrange distance</span><span class="dv" id="st-downrange">0.00 m</span></div>
+        <div class="d-row"><span class="dk">Drift bearing</span><span class="dv" id="st-bearing">—</span></div>
+      </div>
+      <div class="d-section">
+        <div class="d-label">MISSION RECORDS · LIVE</div>
+        <div class="d-row"><span class="dk">Max altitude</span><span class="dv" id="rec-alt">0.0 m</span></div>
+        <div class="d-row"><span class="dk">Max speed</span><span class="dv" id="rec-spd">0.0 m/s</span></div>
+        <div class="d-row"><span class="dk">Max Mach</span><span class="dv" id="rec-mach">0.000</span></div>
+        <div class="d-row"><span class="dk">Max G-load</span><span class="dv" id="rec-g">1.00</span></div>
+      </div>
+    </div>
+
+    <!-- Panel 6: MISSION EVENTS -->
+    <div class="panel">
+      <div class="panel-title"><span class="pt-accent">◈</span> MISSION EVENTS</div>
+      <div id="event-log"><div id="event-log-empty">Awaiting launch…</div></div>
+    </div>
+
   </div>
 </div>
 
@@ -380,7 +455,8 @@ renderer.setClearColor(0x090c10, 1);
 renderer.setPixelRatio(window.devicePixelRatio);
 
 const scene  = new THREE.Scene();
-const camera = new THREE.PerspectiveCamera(45, 1, 0.001, 500);
+scene.fog    = new THREE.Fog(0x090c10, 60, 1400);
+const camera = new THREE.PerspectiveCamera(45, 1, 0.001, 2000);
 camera.position.set(0.5, 0.2, 2.5);
 camera.lookAt(0, 0, 0);
 
@@ -389,8 +465,15 @@ const dlight = new THREE.DirectionalLight(0xffffff, 0.3);
 dlight.position.set(1, 2, 1);
 scene.add(dlight);
 
-// Grid
-const grid = new THREE.GridHelper(10, 10, 0x1e2d3d, 0x1e2d3d);   // 10m x 10m pad area, 1m cells (true scale)
+// World-fixed ground grid — deliberately NOT attached to the rocket or camera.
+// The chase camera below fully translates with the rocket (keeping it framed
+// near screen-center at all times), so this grid sliding past underneath is
+// the primary visual cue that the vehicle is actually moving/drifting, both
+// vertically and horizontally. Large + fogged so it reads as an effectively
+// endless reference plane rather than a bounded pad marker.
+const grid = new THREE.GridHelper(3000, 300, 0x2a3f55, 0x152030); // 10m cells
+grid.material.transparent = true;
+grid.material.opacity = 0.55;
 scene.add(grid);
 
 // Altitude marker rings — thin horizontal circles at regular height
@@ -494,13 +577,13 @@ function updatePlume(rocketY, boosting) {
   plumeGeo.attributes.position.needsUpdate = true;
 }
 
-// Orbit controls
+// Orbit controls — rotX/rotY set the VIEWING ANGLE around the chase target
+// (the rocket), they no longer orbit a fixed world point.
 let drag = false, px0 = 0, py0 = 0, rotX = 0.2, rotY = 0.3;
 // User-controlled zoom MULTIPLIER (1.0 = default framing), separate from the
 // auto chase-distance below — scroll still zooms in/out around whatever
 // altitude-appropriate distance the camera has picked.
 let userZoom = 1.0;
-const pivot = new THREE.Group(); scene.add(pivot);
 
 threeCanvas.addEventListener('mousedown', e => { drag = true; px0 = e.clientX; py0 = e.clientY; });
 window.addEventListener('mouseup', () => drag = false);
@@ -579,6 +662,7 @@ Promise.all([
   );
   rocketGroup.add(solid, wire);
   rocketLoaded = true;
+  applyAeroReadout(aero);
 }).catch(() => {
   // Fallback: simple true-scale capsule if no STL — same tail-at-origin
   // convention as the real STL path (Three.js cylinders/cones are centred
@@ -607,17 +691,7 @@ function resizeViewer() {
 resizeViewer();
 new ResizeObserver(resizeViewer).observe(viewerDiv);
 
-let rocketAlt = 0, isBoost = false;
-
-// TRUE-SCALE fix: previously position used a separate 0.001 compression
-// factor that had no relationship to the rocket's (also arbitrarily
-// scaled) visual size — a real ~500m apogee only moved the rocket 0.5
-// Three.js units while the rocket itself was forced to 1.4 units, so it
-// looked huge and barely climbed. Now both geometry AND position share
-// the same 1-unit-per-metre scale, so relative sizes are physically
-// accurate — a chase camera (below) handles keeping the rocket visible
-// across the huge size range between "sitting on the pad" and "500m up".
-const SCALE_M = 1.0;
+let isBoost = false;
 
 // Chase-camera distance grows with altitude so the rocket stays framed
 // across the full flight, but PULLS BACK SLOWLY relative to how fast the
@@ -632,41 +706,45 @@ function chaseDistance(altitude) {
   return minDist + altitude * 0.12;                   // gentle pullback — climb stays dramatic
 }
 
-// Smoothed camera state — the raw chaseDistance/lookY targets can jump
-// significantly frame-to-frame during a fast boost phase (the rocket can
-// gain tens of m/s very quickly), which made the camera look like it was
-// "losing" the rocket. Easing the actual camera position toward the
-// target each frame (rather than snapping straight to it) gives the
-// camera inertia, like a real chase cam or a damped follow-rig, so fast
-// climbs read as smooth tracking instead of jittery lag.
-let smoothedDist  = null;
-let smoothedLookY = 0;
+// True chase cam: the camera TARGET (what it orbits/looks at) is the
+// rocket's own position, eased for inertia — not a fixed world point. This
+// keeps the rocket framed near screen-center for the whole flight, both
+// vertically and horizontally. Motion still reads clearly because the grid
+// and altitude rings below are fixed in world space and slide past
+// underneath as the camera translates to keep up with the rocket.
+let smoothedDist = null;
+const smoothedTarget = new THREE.Vector3();
 const CAMERA_EASE = 0.06;   // lower = smoother/slower to catch up, higher = snappier
 
 function animate3D() {
   requestAnimationFrame(animate3D);
 
-  const targetDist  = chaseDistance(rocketGroup.position.y) * userZoom;
-  const targetLookY = rocketGroup.position.y * 0.5;
+  const rocketPos  = rocketGroup.position;
+  const targetDist = chaseDistance(rocketPos.y) * userZoom;
 
-  if (smoothedDist === null) smoothedDist = targetDist;   // no easing on first frame
-  smoothedDist  += (targetDist  - smoothedDist)  * CAMERA_EASE;
-  smoothedLookY += (targetLookY - smoothedLookY) * CAMERA_EASE;
+  if (smoothedDist === null) {           // no easing on first frame
+    smoothedDist = targetDist;
+    smoothedTarget.copy(rocketPos);
+  }
+  smoothedDist    += (targetDist    - smoothedDist)    * CAMERA_EASE;
+  smoothedTarget.x += (rocketPos.x - smoothedTarget.x) * CAMERA_EASE;
+  smoothedTarget.y += (rocketPos.y - smoothedTarget.y) * CAMERA_EASE;
+  smoothedTarget.z += (rocketPos.z - smoothedTarget.z) * CAMERA_EASE;
 
-  camera.position.x = Math.sin(rotY) * Math.cos(rotX) * smoothedDist;
-  camera.position.y = Math.sin(rotX) * smoothedDist + smoothedLookY;
-  camera.position.z = Math.cos(rotY) * Math.cos(rotX) * smoothedDist;
-  camera.lookAt(rocketGroup.position.x, smoothedLookY, rocketGroup.position.z);
+  camera.position.x = smoothedTarget.x + Math.sin(rotY) * Math.cos(rotX) * smoothedDist;
+  camera.position.y = smoothedTarget.y + Math.sin(rotX) * smoothedDist;
+  camera.position.z = smoothedTarget.z + Math.cos(rotY) * Math.cos(rotX) * smoothedDist;
+  camera.lookAt(smoothedTarget.x, smoothedTarget.y, smoothedTarget.z);
 
-  updateAltRings(rocketGroup.position.y);
-  updatePlume(rocketGroup.position.y, isBoost);
+  updateAltRings(rocketPos.y);
+  updatePlume(rocketPos.y, isBoost);
   renderer.render(scene, camera);
 }
 animate3D();
 
 function updateRocket3D(d) {
-  // Position (compressed scale so rocket stays visible)
-  rocketGroup.position.set(d.pos[0] * SCALE_M, d.pos[2] * SCALE_M, d.pos[1] * SCALE_M);
+  // Position (true 1 Three.js unit = 1 real metre)
+  rocketGroup.position.set(d.pos[0], d.pos[2], d.pos[1]);
 
   // Attitude from quaternion [w, x, y, z]
   // Our convention: quaternion rotates rocket from Z-up to world frame
@@ -675,18 +753,74 @@ function updateRocket3D(d) {
   rocketGroup.quaternion.set(q[1], q[3], q[2], q[0]);
 
   // Trail
-  trailSimPts.push(new THREE.Vector3(
-    d.pos[0] * SCALE_M, d.pos[2] * SCALE_M, d.pos[1] * SCALE_M
-  ));
+  trailSimPts.push(new THREE.Vector3(d.pos[0], d.pos[2], d.pos[1]));
   if (trailSimPts.length > TRAIL_MAX) trailSimPts.shift();
   trailSimGeo.setFromPoints(trailSimPts);
 
-  rocketAlt = d.pos[2];
-  isBoost   = d.phase === 'BOOST';
+  isBoost = d.phase === 'BOOST';
 
   // Badge
   document.getElementById('badge-phase').textContent = d.phase;
   document.getElementById('badge-motor').textContent  = d.motor_name;
+
+  updateGroundTrack(d.pos[0], d.pos[1]);
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// GROUND-TRACK MINIMAP — top-down X(east)/Y(north) trace, since the chase
+// camera above always keeps the rocket centered and can no longer show
+// absolute horizontal drift by itself.
+// ═══════════════════════════════════════════════════════════════════════════════
+const groundTrackCanvas = document.getElementById('groundtrack');
+const groundTrackCtx    = groundTrackCanvas.getContext('2d');
+const groundTrackPts    = [];
+const GT_MAX_PTS        = 600;
+
+function updateGroundTrack(x, y) {
+  groundTrackPts.push({ x, y });
+  if (groundTrackPts.length > GT_MAX_PTS) groundTrackPts.shift();
+
+  const W = groundTrackCanvas.width, H = groundTrackCanvas.height;
+  const cx = W / 2, cy = H / 2;
+  groundTrackCtx.clearRect(0, 0, W, H);
+
+  let maxR = 10;   // metres — minimum extent so the map isn't hyper-zoomed on the pad
+  for (const p of groundTrackPts) maxR = Math.max(maxR, Math.abs(p.x), Math.abs(p.y));
+  maxR *= 1.2;
+  const s = (W / 2 - 8) / maxR;
+
+  // Axes through the pad
+  groundTrackCtx.strokeStyle = 'rgba(30,45,61,0.9)';
+  groundTrackCtx.lineWidth = 1;
+  groundTrackCtx.beginPath();
+  groundTrackCtx.moveTo(cx, 4); groundTrackCtx.lineTo(cx, H - 4);
+  groundTrackCtx.moveTo(4, cy); groundTrackCtx.lineTo(W - 4, cy);
+  groundTrackCtx.stroke();
+
+  // Pad marker
+  groundTrackCtx.fillStyle = 'rgba(148,163,184,0.7)';
+  groundTrackCtx.beginPath(); groundTrackCtx.arc(cx, cy, 2, 0, Math.PI * 2); groundTrackCtx.fill();
+
+  // Trail
+  if (groundTrackPts.length > 1) {
+    groundTrackCtx.strokeStyle = '#22d3ee';
+    groundTrackCtx.lineWidth = 1.2;
+    groundTrackCtx.beginPath();
+    groundTrackPts.forEach((p, i) => {
+      const px = cx + p.x * s, py = cy - p.y * s;
+      if (i === 0) groundTrackCtx.moveTo(px, py); else groundTrackCtx.lineTo(px, py);
+    });
+    groundTrackCtx.stroke();
+  }
+
+  // Current position
+  const last = groundTrackPts[groundTrackPts.length - 1];
+  groundTrackCtx.fillStyle = '#f97316';
+  groundTrackCtx.beginPath();
+  groundTrackCtx.arc(cx + last.x * s, cy - last.y * s, 2.5, 0, Math.PI * 2);
+  groundTrackCtx.fill();
+
+  document.getElementById('groundtrack-label').textContent = 'GND TRACK · ±' + maxR.toFixed(0) + 'm';
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -787,7 +921,7 @@ const chartData = {
   pid:   { data: [] },
 };
 
-let apogeeTime = null, apogeeAlt = 0, prevVz = 0;
+let apogeeTime = null, prevVz = 0;
 
 function pushChart(key, t, simVal, hwVal) {
   const d = chartData[key];
@@ -923,6 +1057,46 @@ function redrawAllCharts() {
 setInterval(redrawAllCharts, 100);
 
 // ═══════════════════════════════════════════════════════════════════════════════
+// MISSION TIMELINE + EVENT LOG
+// ═══════════════════════════════════════════════════════════════════════════════
+const eventTimes = { liftoff: null, burnout: null, apogee: null, touchdown: null };
+const eventLog   = [];
+
+function fmtClock(t) {
+  const mm = String(Math.floor(t / 60)).padStart(2, '0');
+  const ss = (t % 60).toFixed(1).padStart(4, '0');
+  return `T+${mm}:${ss}`;
+}
+
+function logEvent(t, label, tone) {
+  eventLog.unshift({ t, label, tone });
+  if (eventLog.length > 40) eventLog.pop();
+  const el = document.getElementById('event-log');
+  el.innerHTML = eventLog.map(e =>
+    `<div class="ev-row"><span class="ev-t">${fmtClock(e.t)}</span><span class="ev-label ${e.tone || ''}">${e.label}</span></div>`
+  ).join('');
+}
+
+function setChip(id, cls, time) {
+  const chip = document.getElementById(id);
+  chip.className = 'tl-chip' + (cls ? ' ' + cls : '');
+  chip.querySelector('.tl-t').textContent = time != null ? fmtClock(time) : '';
+}
+
+function renderTimeline(phase) {
+  setChip('tl-pad', phase === 'IDLE' ? 'active' : 'done', phase === 'IDLE' ? null : 0);
+  setChip('tl-liftoff',   eventTimes.liftoff   == null ? '' : (phase === 'BOOST'   ? 'active' : 'done'), eventTimes.liftoff);
+  setChip('tl-burnout',   eventTimes.burnout   == null ? '' : (phase === 'COAST'   ? 'active' : 'done'), eventTimes.burnout);
+  setChip('tl-apogee',    eventTimes.apogee    == null ? '' : (phase === 'DESCENT' ? 'active' : 'done'), eventTimes.apogee);
+  setChip('tl-touchdown', eventTimes.touchdown == null ? '' : 'done', eventTimes.touchdown);
+
+  document.getElementById('tl-line-1').className = 'tl-line' + (eventTimes.liftoff   != null ? ' done' : '');
+  document.getElementById('tl-line-2').className = 'tl-line' + (eventTimes.burnout   != null ? ' done' : '');
+  document.getElementById('tl-line-3').className = 'tl-line' + (eventTimes.apogee    != null ? ' done' : '');
+  document.getElementById('tl-line-4').className = 'tl-line' + (eventTimes.touchdown != null ? ' done' : '');
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
 // SCRUBBER
 // ═══════════════════════════════════════════════════════════════════════════════
 let isLive      = true;
@@ -955,6 +1129,16 @@ setInterval(async () => {
 }, 5000);
 
 // ═══════════════════════════════════════════════════════════════════════════════
+// AERO READOUT (static geometry from the STL/Barrowman pipeline)
+// ═══════════════════════════════════════════════════════════════════════════════
+function applyAeroReadout(aero) {
+  if (!aero) return;
+  if (aero.cp_from_nose)    set('st-cp', fmt(aero.cp_from_nose, 3) + ' m');
+  if (aero.rocket_length)   set('st-length', fmt(aero.rocket_length, 3) + ' m');
+  if (aero.rocket_diameter) set('st-dia', fmt(aero.rocket_diameter, 3) + ' m');
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
 // WEBSOCKET + STATE UPDATE
 // ═══════════════════════════════════════════════════════════════════════════════
 const fmt  = (v, d=2) => typeof v === 'number' ? v.toFixed(d) : '—';
@@ -962,7 +1146,6 @@ const set  = (id, v)  => { const el = document.getElementById(id); if (el) el.te
 
 let flightStats = { maxAlt: 0, maxSpd: 0, maxG: 0, maxMach: 0, burnEnd: 0 };
 let prevPhase   = 'IDLE';
-let wasBoosting = false;
 
 function applyState(d) {
   // Header metrics
@@ -1035,6 +1218,11 @@ function applyState(d) {
   set('uart-rate', fmt(d.uart_packet_rate, 1) + ' Hz');
   set('uart-last', d.uart_last_packet || '—');
 
+  // Ground track readout
+  const downrange = Math.hypot(d.pos[0], d.pos[1]);
+  set('st-downrange', fmt(downrange, 2) + ' m');
+  set('st-bearing', downrange > 0.5 ? fmt((Math.atan2(d.pos[0], d.pos[1]) * 180 / Math.PI + 360) % 360, 0) + '°' : '—');
+
   // HW panel
   const hwOnline = d.hw_connected;
   document.getElementById('hw-offline-msg').style.display  = hwOnline ? 'none' : 'flex';
@@ -1077,13 +1265,9 @@ function applyState(d) {
   chartData.pid.data.push({t, v: pidErr});
   if (chartData.pid.data.length > CHART_BUF) chartData.pid.data.shift();
 
-  // Apogee detection
+  // Apogee detection (chart marker — separate from the phase-transition event below)
   const vz = d.vel[2];
-  if (wasBoosting && vz < 0 && prevVz >= 0 && d.pos[2] > 1) {
-    apogeeTime = t;
-    apogeeAlt  = d.pos[2];
-  }
-  if (d.phase === 'BOOST') wasBoosting = true;
+  if (prevPhase === 'BOOST' && vz < 0 && prevVz >= 0 && d.pos[2] > 1) apogeeTime = t;
   prevVz = vz;
 
   // Flight stats
@@ -1092,6 +1276,20 @@ function applyState(d) {
   flightStats.maxG    = Math.max(flightStats.maxG,    d.g_load);
   flightStats.maxMach = Math.max(flightStats.maxMach, d.mach);
   if (d.phase === 'BOOST') flightStats.burnEnd = t;
+
+  set('rec-alt',  fmt(flightStats.maxAlt, 1) + ' m');
+  set('rec-spd',  fmt(flightStats.maxSpd, 1) + ' m/s');
+  set('rec-mach', fmt(flightStats.maxMach, 3));
+  set('rec-g',    fmt(flightStats.maxG, 2));
+
+  // Mission events + timeline — fires once per phase transition
+  if (d.phase !== prevPhase) {
+    if (d.phase === 'BOOST'   && eventTimes.liftoff   === null) { eventTimes.liftoff   = t; logEvent(t, 'LIFTOFF', 'ok'); }
+    if (d.phase === 'COAST'   && eventTimes.burnout   === null) { eventTimes.burnout   = t; logEvent(t, 'BURNOUT / MECO', 'warn'); }
+    if (d.phase === 'DESCENT' && eventTimes.apogee    === null) { eventTimes.apogee    = t; logEvent(t, `APOGEE — ${fmt(d.pos[2], 1)} m`, 'warn'); }
+    if (d.phase === 'LANDED'  && eventTimes.touchdown === null) { eventTimes.touchdown = t; logEvent(t, 'TOUCHDOWN', 'red'); }
+  }
+  renderTimeline(d.phase);
 
   // Landing detection — show summary once
   if (d.phase === 'LANDED' && prevPhase !== 'LANDED') {
